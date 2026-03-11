@@ -375,7 +375,7 @@ async function downloadFolder(folderPath) {
 function getModeForFile(filePath) {
     if (filePath.startsWith("untitled://")) return 'text/plain';
     const ext = filePath.split('.').pop().toLowerCase();
-    const modeMap = { 'html': 'htmlmixed', 'htm': 'htmlmixed', 'js': 'javascript', 'mjs': 'javascript', 'cjs': 'javascript', 'ts': 'text/typescript', 'jsx': 'text/jsx', 'tsx': 'text/typescript-jsx', 'py': 'python', 'css': 'css', 'scss': 'text/x-scss', 'less': 'text/x-less', 'json': 'application/json', 'md': 'markdown', 'markdown': 'markdown', 'xml': 'xml', 'yaml': 'text/x-yaml', 'yml': 'text/x-yaml', 'sh': 'text/x-sh', 'bash': 'text/x-sh', 'sql': 'text/x-sql', 'java': 'text/x-java', 'c': 'text/x-csrc', 'h': 'text/x-csrc', 'cpp': 'text/x-c++src', 'hpp': 'text/x-c++src', 'cc': 'text/x-c++src', 'cs': 'text/x-csharp', 'php': 'application/x-httpd-php', 'rb': 'text/x-ruby', 'go': 'go', 'rs': 'rust', 'swift': 'text/x-swift', 'kt': 'text/x-kotlin', 'lua': 'text/x-lua', 'pl': 'text/x-perl', 'r': 'text/x-rsrc', 'dockerfile': 'text/x-dockerfile', 'ini': 'text/x-properties', 'properties': 'text/x-properties', 'toml': 'text/x-toml', 'csv': 'text/plain', 'log': 'text/plain', 'txt': 'text/plain', 'bat': 'text/plain', 'sass': 'text/x-sass', 'vue': 'text/x-vue', 'svelte': 'text/x-svelte' };
+    const modeMap = { 'html': 'htmlmixed', 'htm': 'htmlmixed', 'js': 'javascript', 'mjs': 'javascript', 'cjs': 'javascript', 'ts': 'text/typescript', 'jsx': 'text/jsx', 'tsx': 'text/typescript-jsx', 'py': 'python', 'css': 'css', 'scss': 'text/x-scss', 'less': 'text/x-less', 'json': 'application/json', 'md': 'markdown', 'markdown': 'markdown', 'xml': 'xml', 'yaml': 'text/x-yaml', 'yml': 'text/x-yaml', 'sh': 'text/x-sh', 'bash': 'text/x-sh', 'sql': 'text/x-sql', 'java': 'text/x-java', 'c': 'text/x-csrc', 'h': 'text/x-csrc', 'cpp': 'text/x-c++src', 'hpp': 'text/x-c++src', 'cc': 'text/x-c++src', 'cs': 'text/x-csharp', 'php': 'application/x-httpd-php', 'rb': 'text/x-ruby', 'go': 'go', 'rs': 'rust', 'swift': 'text/x-swift', 'kt': 'text/x-kotlin', 'lua': 'text/x-lua', 'pl': 'text/x-perl', 'r': 'text/x-rsrc', 'dockerfile': 'text/x-dockerfile', 'ini': 'text/x-properties', 'properties': 'text/x-properties', 'toml': 'text/x-toml', 'csv': 'text/plain', 'log': 'text/plain', 'txt': 'text/plain', 'bat': 'text/plain', 'sass': 'text/x-sass', 'vue': 'text/x-vue', 'svelte': 'text/x-svelte', 'tex': 'text/x-stex', 'bib': 'text/x-stex' };
     return modeMap[ext] || 'text/plain';
 }
 
@@ -483,6 +483,8 @@ function getFileTemplate(fileName) {
         'php': `<?php\n\n`,
         'vue': `<template>\n${indent}<div>\n${indent}${indent}\n${indent}</div>\n</template>\n\n<script>\nexport default {\n${indent}name: '${fileName.replace(/\.vue$/, '')}',\n};\n</script>\n\n<style scoped>\n</style>\n`,
         'svelte': `<script>\n${indent}\n</script>\n\n<div>\n${indent}\n</div>\n\n<style>\n</style>\n`,
+        'tex': `\\documentclass{article}\n\n\\title{${fileName.replace(/\.tex$/, '')}}\n\\author{}\n\\date{\\today}\n\n\\begin{document}\n\n\\maketitle\n\n\\section{Introduction}\n\n\\end{document}\n`,
+        'bib': `@article{key,\n${indent}author = {},\n${indent}title  = {},\n${indent}year   = {},\n${indent}journal = {},\n}\n`,
     };
     return templates[ext] ?? '';
 }

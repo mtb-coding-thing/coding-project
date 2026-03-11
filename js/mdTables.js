@@ -1,11 +1,13 @@
 /* This script doesn't currently do anything because the universe seems to have a profound dislike of markdown tables. The next comment is flat-out wrong. */
 
+/* Hey looks like tables work now, but this script is still useless. It's too iconic to delete. The previous comment referred to the comment after this comment. */
+
 /**
  * Custom Markdown Table Preprocessor
  * Detects Markdown tables and converts them to HTML.
  * This guarantees tables render regardless of external library versions/plugins.
  */
-function processCustomMarkdownTables(markdown) {
+function please_work_this_time(markdown) {
     const lines = markdown.split('\n');
     let output = [];
     let tableBuffer =[];

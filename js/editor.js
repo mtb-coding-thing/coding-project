@@ -1,19 +1,55 @@
+function copyEditorContent() {
+    if (!codeEditor) return;
+    const content = codeEditor.getValue();
+    if (!content.length) { showNotification("Nothing to copy.", true); return; }
+    navigator.clipboard.writeText(content).then(() => {
+        showNotification("Copied to clipboard.");
+    }).catch(() => {
+        showNotification("Copy failed — clipboard access denied.", true);
+    });
+}
+
 function formatCode() {
     if (!currentFilePath && codeEditor.getValue().trim() === '') { showNotification("Nothing to format."); return; }
-    if (typeof prettier === 'undefined' || typeof prettierPlugins === 'undefined') { showNotification("Formatting library not loaded.", true); return; }
     const currentContent = codeEditor.getValue();
     const currentMode = codeEditor.getOption('mode');
+
+    // LaTeX: native formatter (no Prettier parser exists for LaTeX)
+    if (currentMode === 'text/x-stex') {
+        const formatted = formatLatex(currentContent);
+        if (formatted !== currentContent) {
+            const cursor = codeEditor.getCursor();
+            codeEditor.setValue(formatted);
+            codeEditor.setCursor(cursor);
+            showNotification("LaTeX formatted.");
+            if (currentFilePath && fileStructure[currentFilePath] && !fileStructure[currentFilePath].unsaved) {
+                fileStructure[currentFilePath].unsaved = true; updateTabs(); updateStatusBar();
+            }
+        } else { showNotification("LaTeX is already formatted."); }
+        return;
+    }
+
+    if (typeof prettier === 'undefined' || typeof prettierPlugins === 'undefined') { showNotification("Formatting library not loaded.", true); return; }
+
     let parser = null; let plugins = [];
     switch (currentMode) {
-        case 'javascript': case 'application/json': parser = 'babel'; plugins = [prettierPlugins.babel]; break;
-        case 'css': case 'text/x-scss': case 'text/x-less': parser = 'css'; plugins = [prettierPlugins.postcss]; break;
-        case 'htmlmixed': case 'xml': parser = 'html'; plugins = [prettierPlugins.html]; break;
-        case 'markdown': parser = 'markdown'; plugins = [prettierPlugins.markdown]; break;
-        case 'text/x-yaml': parser = 'yaml'; plugins = [prettierPlugins.yaml]; break;
-        default: showNotification(`Formatting not supported for mode: ${modeNames[currentMode] || currentMode}`, false); return;
+        case 'javascript':
+        case 'application/json':       parser = 'babel';      plugins = [prettierPlugins.babel]; break;
+        case 'text/jsx':               parser = 'babel';      plugins = [prettierPlugins.babel]; break;
+        case 'text/typescript':        parser = 'typescript'; plugins = [prettierPlugins.typescript]; break;
+        case 'text/typescript-jsx':    parser = 'typescript'; plugins = [prettierPlugins.typescript]; break;
+        case 'css':
+        case 'text/x-scss':
+        case 'text/x-less':            parser = 'css';        plugins = [prettierPlugins.postcss]; break;
+        case 'htmlmixed':
+        case 'xml':                    parser = 'html';       plugins = [prettierPlugins.html]; break;
+        case 'markdown':               parser = 'markdown';   plugins = [prettierPlugins.markdown]; break;
+        case 'text/x-yaml':            parser = 'yaml';       plugins = [prettierPlugins.yaml]; break;
+        case 'graphql':                parser = 'graphql';    plugins = [prettierPlugins.graphql]; break;
+        default: showNotification(`Formatting not supported for: ${modeNames[currentMode] || currentMode}`, false); return;
     }
     try {
-        const formatOptions = { parser: parser, plugins: plugins, tabWidth: settings.tabWidth || 4, semi: true, singleQuote: false };
+        const formatOptions = { parser, plugins, tabWidth: settings.tabWidth || 4, semi: true, singleQuote: false };
         const formattedContent = prettier.format(currentContent, formatOptions);
         if (formattedContent !== currentContent) {
             const cursor = codeEditor.getCursor();

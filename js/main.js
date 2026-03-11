@@ -1,3 +1,16 @@
+function toggleToolbarMenu(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('toolbarOverflowMenu');
+    const isOpen = menu.classList.contains('open');
+    closeToolbarMenu();
+    if (!isOpen) menu.classList.add('open');
+}
+
+function closeToolbarMenu() {
+    const menu = document.getElementById('toolbarOverflowMenu');
+    if (menu) menu.classList.remove('open');
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     initWorkers();
 
@@ -65,6 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.addEventListener('keydown', async (e) => {
         if (e.key === 'Escape') { 
             closeContextMenu();
+            closeToolbarMenu();
             const paletteVisible = document.getElementById('commandPalette').style.display !== 'none';
             const settingsVisible = document.getElementById('settingsOverlay').style.display !== 'none';
             hideCommandPalette();
@@ -145,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             };
                             reader.onerror = () => { filesProcessed++; rejectEntry(); };
                             if (/\.(png|jpe?g|gif|svg)$/i.test(file.name) || /\.(xlsx)$/i.test(file.name)) reader.readAsDataURL(file);
-                            else if (file.type.startsWith('text/') || !file.name.includes('.') || /\.(txt|js|css|html|py|json|md|xml|yaml|yml|sh|sql|c|cpp|h|hpp|java|php|rb|go|rs|swift|kt|lua|pl|r|dockerfile|ini|properties|toml|log|csv|bat|ts|jsx|tsx|scss|sass|vue|svelte)$/i.test(file.name)) reader.readAsText(file);
+                            else if (file.type.startsWith('text/') || !file.name.includes('.') || /\.(txt|js|css|html|py|json|md|xml|yaml|yml|sh|sql|c|cpp|h|hpp|java|php|rb|go|rs|swift|kt|lua|pl|r|dockerfile|ini|properties|toml|log|csv|bat|ts|jsx|tsx|scss|sass|vue|svelte|tex|bib)$/i.test(file.name)) reader.readAsText(file);
                             else { createFile(`${baseDropPath}/${currentPathInZip}`, `[Binary file]`, false); filesProcessed++; resolveEntry(); }
                         }, (err) => { filesProcessed++; rejectEntry(err); });
                     } else if (entry.isDirectory) {
@@ -171,6 +185,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     initCommandPalette();
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.toolbar-overflow-wrap')) closeToolbarMenu();
+    });
 });
 
 const commands = [
