@@ -1,1 +1,2 @@
 CWD is slightly broken and doesn't update properly.
+Not exactly a bug but the command palette looks a bit dated and the window is small. Could be updated and enlargened a bit.
