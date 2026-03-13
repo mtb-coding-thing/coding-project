@@ -1,0 +1,4 @@
+- Currently working on v0.3.1 (unstable, still WIP)
+- Latest stable version is v0.3.0
+- v0.3.1 will include bugfixes and numerous new additions/improvements
+- The next release will likely be in a few days after v0.3.1 becomes stable.
