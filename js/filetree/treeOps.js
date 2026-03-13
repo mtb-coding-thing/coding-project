@@ -199,7 +199,7 @@ function duplicateEntry(path) {
         counter++;
     }
     const newPath = `${parentPath}/${newName}`;
-    createFile(newPath, entry.content, true);
+    createFile(newPath, entry.content, false);
     renderFileTree(); openFile(newPath);
     showNotification(`Duplicated as "${newName}".`);
     if (settings.autoSaveSession) saveSession();
@@ -257,6 +257,7 @@ function expandAll() {
     }
     expandRecursive('root');
     renderFileTree();
+    if (settings.autoSaveSession) saveSession();
 }
 
 function sortFolderByExtension(folderPath) {
