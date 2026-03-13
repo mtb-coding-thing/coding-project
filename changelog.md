@@ -19,8 +19,11 @@
 - Pinned tabs now show a blue top-border for clearer visual distinction
 - `collapseAll` / `expandAll` both save session so tree state persists across reloads
 - Diff view word wrap now correctly follows the global Word Wrap setting
+- Breadcrumb path now copyable
 
 ## Additions
 - `js/minimap.js` — canvas minimap (previously present but inactive; now loaded and initialised)
 - `js/latex.js` — LaTeX preview renderer extracted from `layout.js` (added in v0.3.1 initial fix)
 - `bracketColorization` setting added to defaults and Settings UI
+- Added a new breadcrumb path system just beneath the tabs.
+
