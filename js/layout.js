@@ -187,7 +187,6 @@ function updatePreview() {
         iframe.srcdoc = renderLatexToHtml(content);
     }
 }
-}
 
 function collapseAll() {
     function collapseRecursive(path) {
@@ -270,3 +269,4 @@ function toggleDiff() {
             }
         });
     }
+}
