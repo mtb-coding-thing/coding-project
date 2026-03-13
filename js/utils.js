@@ -87,6 +87,16 @@ function updateBreadcrumb() {
         span.title = segPath.replace(/^root\/?/, '');
         if (!isLast) {
             span.onclick = () => { if (fileStructure[segPath]) { currentWorkingDirectory = segPath; renderFileTree(); } };
+        } else {
+            span.title = 'Click to copy path';
+            span.onclick = () => {
+                const displayPath = currentFilePath.replace(/^root\/?/, '');
+                navigator.clipboard.writeText(displayPath).then(() => {
+                    showNotification(`Path copied: ${displayPath}`);
+                }).catch(() => {
+                    showNotification('Could not copy path to clipboard.', true);
+                });
+            };
         }
         bar.appendChild(span);
     });

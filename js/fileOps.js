@@ -304,6 +304,7 @@ async function openFile(filePath) {
 
     updateTabs(); updateStatusBar(); codeEditor.focus(); if (settings.autoSaveSession) saveSession();
     addRecentFile(filePath);
+    if (typeof refreshMinimap === 'function') refreshMinimap();
 }
 
 async function downloadProject() {

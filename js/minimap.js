@@ -26,31 +26,6 @@
     let wrap = null, canvas = null, ctx = null;
     let scheduled = false;
 
-    // ── core math helpers ─────────────────────────────────────────────────
-    // CM5 scrollInfo:
-    //   .height       = total document pixel height (always > clientHeight)
-    //   .clientHeight = visible editor pixel height
-    //   .top          = current scroll offset, range [0 .. height-clientHeight]
-    //
-    // We map the canvas linearly to the document:
-    //   canvasY / canH  =  line / totalLines
-    //
-    // So scroll position for a given canvas Y:
-    //   scrollTop = (canvasY / canH) * scrollRange
-    //   where scrollRange = height - clientHeight
-    //
-    // Band on canvas for current scroll:
-    //   bandTop = (top / scrollRange) * (canH - bandH)   <- keeps band inside canvas
-    //   bandH   = (clientHeight / height) * canH
-
-    function getBandGeometry(si, canH) {
-        const scrollRange = Math.max(si.height - si.clientHeight, 1);
-        const scrollFrac  = si.top / scrollRange;           // 0..1
-        const bandH       = Math.max((si.clientHeight / si.height) * canH, 8);
-        const bandTop     = scrollFrac * (canH - bandH);    // stays within canvas
-        return { bandTop, bandH, scrollRange };
-    }
-
     // ── draw ─────────────────────────────────────────────────────────────
 
     function draw() {
@@ -60,18 +35,17 @@
         const totalLines = codeEditor.lineCount();
         const canH = Math.max(totalLines * LINE_H, 1);
 
-        // Resize canvas (logical size; CSS width is fixed via stylesheet)
         if (canvas.width !== WIDTH || canvas.height !== canH) {
             canvas.width  = WIDTH;
             canvas.height = canH;
-            canvas.style.height = canH + 'px';  // keep CSS in sync to avoid scaling
+            canvas.style.height = canH + 'px';
         }
 
         // Background
         ctx.fillStyle = C.bg;
         ctx.fillRect(0, 0, WIDTH, canH);
 
-        // Lines — precise mode (true) forces CM5 to tokenize off-screen lines
+        // Lines — precise:true forces CM5 to tokenize off-screen lines
         for (let ln = 0; ln < totalLines; ln++) {
             const y = ln * LINE_H;
             let x = PAD;
@@ -95,8 +69,15 @@
         }
 
         // Viewport band
+        // si.height       = total document pixel height (always >= clientHeight)
+        // si.clientHeight = visible editor height in px
+        // si.top          = scroll offset, range [0 .. height - clientHeight]
+        // scrollRange     = the actual scrollable distance
         const si = codeEditor.getScrollInfo();
-        const { bandTop, bandH } = getBandGeometry(si, canH);
+        const scrollRange = Math.max(si.height - si.clientHeight, 1);
+        const scrollFrac  = si.top / scrollRange;                        // 0..1
+        const bandH       = Math.max((si.clientHeight / si.height) * canH, 8);
+        const bandTop     = scrollFrac * (canH - bandH);                 // stays within canvas
 
         ctx.fillStyle = C.band;
         ctx.fillRect(0, bandTop, WIDTH, bandH);
@@ -104,19 +85,15 @@
         ctx.lineWidth = 1;
         ctx.strokeRect(0.5, bandTop + 0.5, WIDTH - 1, bandH - 1);
 
-        // Slide canvas inside wrap so the band stays visible
-        slideToShowBand(canH, bandTop, bandH);
-    }
-
-    function slideToShowBand(canH, bandTop, bandH) {
+        // Slide canvas so band stays visible inside the wrap
         const wrapH = wrap.clientHeight;
-        if (canH <= wrapH) {
+        if (canH > wrapH && wrapH > 0) {
+            let offset = bandTop + bandH / 2 - wrapH / 2;
+            offset = Math.max(0, Math.min(offset, canH - wrapH));
+            canvas.style.transform = `translateY(${-offset}px)`;
+        } else {
             canvas.style.transform = 'translateY(0)';
-            return;
         }
-        let offset = bandTop + bandH / 2 - wrapH / 2;
-        offset = Math.max(0, Math.min(offset, canH - wrapH));
-        canvas.style.transform = `translateY(${-offset}px)`;
     }
 
     function schedule() {
@@ -130,18 +107,16 @@
     function jumpTo(clientY) {
         if (!codeEditor || !canvas || !wrap) return;
 
-        // 1. Convert screen Y to canvas Y (accounting for the slide offset)
+        // canvas Y = position within wrap + how far canvas has been slid up
         const wrapRect    = wrap.getBoundingClientRect();
         const m           = canvas.style.transform.match(/translateY\(\s*(-?[\d.]+)px\)/);
-        const slideOffset = m ? -parseFloat(m[1]) : 0;   // positive = canvas slid up
+        const slideOffset = m ? -parseFloat(m[1]) : 0;
         const canvasY     = (clientY - wrapRect.top) + slideOffset;
 
-        // 2. canvasY / canH = doc fraction; map to scroll position using scrollRange
+        // map canvas fraction → scroll position within actual scrollable range
+        const fraction    = Math.max(0, Math.min(1, canvasY / canvas.height));
         const si          = codeEditor.getScrollInfo();
-        const canH        = canvas.height;
         const scrollRange = Math.max(si.height - si.clientHeight, 1);
-        const fraction    = Math.max(0, Math.min(1, canvasY / canH));
-
         codeEditor.scrollTo(null, fraction * scrollRange);
     }
 
@@ -158,6 +133,9 @@
         wrap.appendChild(canvas);
         ctx = canvas.getContext('2d');
 
+        console.log('[Minimap] wrap dimensions:', wrap.clientWidth, 'x', wrap.clientHeight,
+                    '— waiting for first file open');
+
         let dragging = false;
         canvas.addEventListener('mousedown', e => { e.preventDefault(); dragging = true; jumpTo(e.clientY); });
         window.addEventListener('mousemove', e => { if (dragging) jumpTo(e.clientY); });
@@ -168,8 +146,14 @@
         codeEditor.on('viewportChange', schedule);
         codeEditor.on('swapDoc',        schedule);
 
-        draw();
-        console.log('[Minimap] ready —', codeEditor.lineCount(), 'lines, canH:', codeEditor.lineCount() * LINE_H);
+        // Redraw if the editor pane is resized
+        if (typeof ResizeObserver !== 'undefined') {
+            new ResizeObserver(schedule).observe(wrap);
+        }
+
+        // Don't draw here — editor has no file loaded yet (session opens file
+        // via requestAnimationFrame after initMinimap runs). refreshMinimap()
+        // is called from openFile() once content is actually set.
     };
 
     window.refreshMinimap = function () { schedule(); };
