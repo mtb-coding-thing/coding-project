@@ -1,3 +1,4 @@
 CWD is slightly broken and doesn't update properly. Only updates when going to a different subfolder; not the root.
 Not exactly a bug but the command palette looks a bit dated and the window is small. Could be updated and enlargened a bit.
 Minor bug: "Done — 0 item(s) dropped." status message when dragdropping an item within the explorer (this has existed for quite some time and I have no clue how to fix it).
+Minimap does nothing
