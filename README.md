@@ -35,7 +35,7 @@ Can't remember a shortcut?
 Click the **Preview** button to enable the split-pane view. 
 *   **Markdown**: Automatically renders headers, formatting, blockquotes, tables, and code blocks.
 *   **HTML**: Renders the raw HTML content in real-time. (No support yet for loading CSS/JS in other linked files)
-*   **LaTeX**: LaTeX document rendering added in the latest version (still testing)
+*   **LaTeX**: LaTeX document rendering will be added in the latest version (still testing)
 
 ## 🛠️ Managing Versions (Workspace Isolation)
 Because CodeEdit persists your work in your browser's database, you may want to separate your "Working" version from your "Stable" version (assuming you're editing it).
