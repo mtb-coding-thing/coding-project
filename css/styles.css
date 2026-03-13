@@ -287,7 +287,11 @@ body { background: var(--bg-color); color: var(--text-color); display: flex; hei
 .breadcrumb-file {
     color: var(--text-color);
     font-weight: 500;
-    cursor: default;
+    cursor: pointer;
+}
+.breadcrumb-file:hover {
+    background: rgba(255,255,255,0.07);
+    color: var(--accent-color);
 }
 .breadcrumb-sep {
     color: #555;
@@ -314,6 +318,7 @@ body { background: var(--bg-color); color: var(--text-color); display: flex; hei
    ============================================================ */
 .minimap-wrap {
     width: 84px;
+    height: 100%;          /* fill the flex row height */
     flex-shrink: 0;
     overflow: hidden;      /* clips the taller-than-wrap canvas */
     position: relative;    /* canvas positions absolute inside this */
