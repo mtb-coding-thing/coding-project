@@ -9,6 +9,8 @@
 - Fixed `expandAll` not saving session (folder expand/collapse state now persists correctly)
 - Fixed duplicated files starting with an unsaved asterisk — `Duplicate` now creates a clean saved copy
 - Fixed global replace not preserving the correct diff baseline — `savedContent` is now kept as the pre-replace original so the diff view is accurate
+- Fixed a bug that made the editor unscrollable
+- Fixed a bug that made the minimap malfunction
 
 ## Improvements
 - Word Wrap is now togglable from the `···` overflow toolbar menu with a live checkmark indicator
@@ -22,8 +24,9 @@
 - Breadcrumb path now copyable
 
 ## Additions
-- `js/minimap.js` — canvas minimap (previously present but inactive; now loaded and initialised)
+- `js/minimap.js` — canvas minimap 
 - `js/latex.js` — LaTeX preview renderer extracted from `layout.js` (added in v0.3.1 initial fix)
 - `bracketColorization` setting added to defaults and Settings UI
 - Added a new breadcrumb path system just beneath the tabs.
+
 
