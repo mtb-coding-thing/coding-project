@@ -1,0 +1,2 @@
+-- Fixed a critical bug with v0.3.1 (a syntax error that caused the entire app to not work)
+-- Fixed latex preview
