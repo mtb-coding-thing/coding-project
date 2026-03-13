@@ -21,14 +21,75 @@ function updateStatusBar() {
         wordCountStr = ` | ${wordCount} word${wordCount !== 1 ? 's' : ''}`;
     }
 
+    // Encoding detection — sniff for non-ASCII to guess UTF-8 vs ASCII
+    let encoding = 'UTF-8';
+    try {
+        const sample = content.slice(0, 4096);
+        encoding = /[^\x00-\x7F]/.test(sample) ? 'UTF-8' : 'ASCII';
+    } catch (_) {}
+
     const statusEl = document.getElementById('statusContent');
     statusEl.innerHTML =
         `CWD: ${escapeHtml(cwdDisplayPath)} | Mode: ${escapeHtml(modeName)} | ` +
         `<span id="statusLineCol" class="status-goto" title="Go to Line/Column (Ctrl+G)">Ln ${line}/${lineCount}, Col ${column}</span>` +
-        `${wordCountStr} | ${size} bytes${escapeHtml(unsavedIndicator)}`;
+        `${wordCountStr} | ${size} B | ${encoding}${escapeHtml(unsavedIndicator)}`;
 
     const gotoSpan = document.getElementById('statusLineCol');
     if (gotoSpan) gotoSpan.onclick = () => openGoToLine();
+
+    // Update breadcrumb bar whenever the status bar updates
+    updateBreadcrumb();
+}
+
+// Update the breadcrumb bar above the tabs
+function updateBreadcrumb() {
+    const bar = document.getElementById('breadcrumbBar');
+    if (!bar) return;
+
+    bar.innerHTML = '';
+
+    if (!currentFilePath) {
+        bar.innerHTML = '<span class="breadcrumb-empty">No file open</span>';
+        return;
+    }
+
+    if (currentFilePath.startsWith('untitled://')) {
+        const span = document.createElement('span');
+        span.className = 'breadcrumb-segment breadcrumb-file';
+        span.textContent = fileStructure[currentFilePath]?.displayName || 'Untitled';
+        bar.appendChild(span);
+        return;
+    }
+
+    // Build segments from path (strip leading "root/")
+    const segments = currentFilePath.replace(/^root\/?/, '').split('/').filter(Boolean);
+    const rootLabel = fileStructure['root']?.displayName || 'root';
+
+    // Root segment
+    const rootSpan = document.createElement('span');
+    rootSpan.className = 'breadcrumb-segment breadcrumb-folder';
+    rootSpan.textContent = rootLabel;
+    rootSpan.title = '/';
+    rootSpan.onclick = () => { currentWorkingDirectory = 'root'; renderFileTree(); };
+    bar.appendChild(rootSpan);
+
+    segments.forEach((seg, i) => {
+        const sep = document.createElement('span');
+        sep.className = 'breadcrumb-sep';
+        sep.textContent = '›';
+        bar.appendChild(sep);
+
+        const isLast = i === segments.length - 1;
+        const segPath = 'root/' + segments.slice(0, i + 1).join('/');
+        const span = document.createElement('span');
+        span.className = isLast ? 'breadcrumb-segment breadcrumb-file' : 'breadcrumb-segment breadcrumb-folder';
+        span.textContent = seg;
+        span.title = segPath.replace(/^root\/?/, '');
+        if (!isLast) {
+            span.onclick = () => { if (fileStructure[segPath]) { currentWorkingDirectory = segPath; renderFileTree(); } };
+        }
+        bar.appendChild(span);
+    });
 }
 
 // Debounced renderFileTree — use for non-critical re-renders (e.g. tab close when not active)
@@ -49,7 +110,7 @@ function showNotification(message, isError = false, duration = 3000) {
 function getFileIcon(fileName) {
     if (!fileName || !fileName.includes('.')) { return '📄'; }
     const ext = fileName.split('.').pop().toLowerCase();
-    const iconMap = { 'js': '🟨', 'ts': '🟦', 'py': '🐍', 'html': '🌐', 'css': '🎨', 'scss': '🎨', 'less': '🎨', 'json': '📦', 'md': '📝', 'txt': '📄', 'c': '🇨', 'h': '🇭', 'cpp': '🇨++', 'hpp': '🇭++', 'java': '☕', 'php': '🐘', 'sql': '🗃️', 'sh': '💲', 'bash': '💲', 'yml': '⚙️', 'yaml': '⚙️', 'xml': '📰', 'png': '🖼️', 'jpg': '🖼️', 'jpeg': '🖼️', 'gif': '🖼️', 'svg': '🖌️', 'zip': '📦', 'rar': '📦', 'gz': '📦', 'pdf': '📕', 'xlsx': '📊', 'xls': '📊', 'csv': '📈', 'doc': '📄', 'docx': '📄', 'ppt': '🖥️', 'pptx': '🖥️', 'dockerfile': '🐳', 'log': '📜', 'rb': '💎', 'go': '🐹', 'rs': '🦀', 'swift': '🐦', 'kt': '💜', 'lua': '🌙', 'pl': '🐪', 'r': '📊', 'ini': '⚙️', 'properties': '⚙️', 'toml': '⚙️', 'bat': '💻', 'jsx': '⚛️', 'tsx': '⚛️', 'sass': '🎨', 'vue': '🟩', 'svelte': '🔴', 'tex': '📐', 'bib': '📚' };
+    const iconMap = { 'js': '☕', 'ts': '🟦', 'py': '🐍', 'html': '🌐', 'css': '🎨', 'scss': '🎨', 'less': '🎨', 'json': '📦', 'md': '📝', 'txt': '📄', 'c': '🇨', 'h': '🇭', 'cpp': '🇨++', 'hpp': '🇭++', 'java': '♨️', 'php': '🐘', 'sql': '🗃️', 'sh': '💲', 'bash': '💲', 'yml': '⚙️', 'yaml': '⚙️', 'xml': '📰', 'png': '🖼️', 'jpg': '🖼️', 'jpeg': '🖼️', 'gif': '🖼️', 'svg': '🖌️', 'zip': '📦', 'rar': '📦', 'gz': '📦', 'pdf': '📕', 'xlsx': '📊', 'xls': '📊', 'csv': '📈', 'doc': '📄', 'docx': '📄', 'ppt': '🖥️', 'pptx': '🖥️', 'dockerfile': '🐳', 'log': '📜', 'rb': '💎', 'go': '🐹', 'rs': '🦀', 'swift': '🐦', 'kt': '💜', 'lua': '🌙', 'pl': '🐪', 'r': '📊', 'ini': '⚙️', 'properties': '⚙️', 'toml': '⚙️', 'bat': '💻', 'jsx': '⚛️', 'tsx': '⚛️', 'sass': '🎨', 'vue': '🟩', 'svelte': '🔴', 'tex': '📐', 'bib': '📚' };
     return iconMap[ext] || '❓';
 }
 

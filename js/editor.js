@@ -118,6 +118,8 @@ function performGlobalReplace() {
             regex.lastIndex = 0; // reset before test
             if (regex.test(entry.content)) {
                 regex.lastIndex = 0; // reset again before replace
+                // If file had no prior unsaved changes, its savedContent is the clean baseline.
+                // Leave savedContent untouched so the diff view correctly shows pre-replace as "original".
                 entry.content = entry.content.replace(regex, () => {
                     replaceCount++;
                     return replaceStr;

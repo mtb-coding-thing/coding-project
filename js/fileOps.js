@@ -263,6 +263,12 @@ async function openFile(filePath) {
 
     const tabExistedBeforeOpen = openTabs.has(filePath); currentFilePath = filePath;
 
+    // Update CWD to the file's parent folder so "New File" creates in the right place
+    if (!filePath.startsWith('untitled://')) {
+        const parentPath = filePath.substring(0, filePath.lastIndexOf('/'));
+        if (parentPath && fileStructure[parentPath]) currentWorkingDirectory = parentPath;
+    }
+
     if (!tabExistedBeforeOpen) {
         const tabName = filePath.startsWith("untitled://") ? fileEntry.displayName : filePath.split('/').pop();
         const tab = createTabElement(filePath, fileEntry.unsaved, tabName); openTabs.set(filePath, { tabElement: tab, unsaved: fileEntry.unsaved });

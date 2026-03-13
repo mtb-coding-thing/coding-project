@@ -5,7 +5,8 @@ const defaultSettings = {
     autoCloseTags: true, matchBrackets: true, autoCloseBrackets: true,
     theme: 'monokai', wordWrap: false, tabWidth: 4, foldGutter: true,
     sidebarWidth: '250px', editorPaneFlexBasis: '50%', previewPaneFlexBasis: '50%',
-    autoSaveSession: true, autoSaveOnBlur: false, fileTemplates: true
+    autoSaveSession: true, autoSaveOnBlur: false, fileTemplates: true,
+    bracketColorization: true, autoSaveInterval: false, autoSaveIntervalMs: 30000
 };
 
 const RECENT_FILES_MAX = 20;
@@ -15,6 +16,10 @@ let untitledTabCounter = 1;
 let currentWorkingDirectory = 'root';
 let activeContextMenu = null;
 let dragSrcPath = null; // currently dragged file-tree node path
+
+// Tab state
+let pinnedTabs = new Set(); // Set of pinned file paths
+
 const VERSION = "0.3.1";
 const SESSION_STORAGE_KEY = `codeEditorSession_${VERSION}`;
 const SETTINGS_STORAGE_KEY = 'codeEditorSettings';
@@ -39,6 +44,9 @@ let globalSearchCaseSensitive = false;
 // Diff Variables
 let isDiffEnabled = false;
 let diffView = null;
+
+// Auto-save interval handle
+let autoSaveIntervalHandle = null;
 
 let mdInstance = null;
 function getMarkdownInstance() {

@@ -197,6 +197,24 @@ function collapseAll() {
     }
     collapseRecursive('root');
     renderFileTree();
+    // Save session so collapsed state persists
+    if (settings.autoSaveSession) saveSession();
+}
+
+function toggleWordWrap() {
+    updateAndSaveSetting('wordWrap', !settings.wordWrap);
+    showNotification(settings.wordWrap ? 'Word wrap enabled.' : 'Word wrap disabled.', false, 2000);
+    syncWordWrapMenuItem();
+}
+
+function syncWordWrapMenuItem() {
+    const item = document.getElementById('wrapToggleMenuItem');
+    if (!item) return;
+    // Show a checkmark prefix when wrap is on
+    const label = item.childNodes[0];
+    if (label && label.nodeType === Node.TEXT_NODE) {
+        label.nodeValue = (settings.wordWrap ? '✓ ' : '') + 'Word Wrap ';
+    }
 }
 
 function toggleDiff() {
@@ -251,13 +269,13 @@ function toggleDiff() {
             lineNumbers: true,
             mode: currentMode,
             theme: settings.theme,
-            revertButtons: true, // Arrows click to revert chunk from saved -> modified
+            revertButtons: true,
             connect: 'align',
             collapseIdentical: false,
             allowEditingOriginals: false,
             tabSize: settings.tabWidth,
             indentUnit: settings.tabWidth,
-            lineWrapping: settings.wordWrap,
+            lineWrapping: settings.wordWrap,   // respect global word-wrap setting
             viewportMargin: Infinity
         });
 
@@ -268,5 +286,7 @@ function toggleDiff() {
                 codeEditor.setValue(newVal); 
             }
         });
+
+        console.log('[Diff] View opened for:', currentFilePath);
     }
 }

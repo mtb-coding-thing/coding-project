@@ -62,13 +62,13 @@ async function loadSession() {
                 });
             }
 
-            if (sessionData.activeFilePath && (fileStructure[sessionData.activeFilePath] || sessionData.activeFilePath.startsWith("untitled://"))) {
-                setTimeout(() => openFile(sessionData.activeFilePath), 0);
-            } else if (sessionData.openFiles?.length > 0) {
-                const lastPath = sessionData.openFiles[sessionData.openFiles.length - 1];
-                if (fileStructure[lastPath] || lastPath.startsWith("untitled://")) {
-                    setTimeout(() => openFile(lastPath), 0);
-                }
+            const pathToOpen = (sessionData.activeFilePath && (fileStructure[sessionData.activeFilePath] || sessionData.activeFilePath.startsWith("untitled://")))
+                ? sessionData.activeFilePath
+                : (sessionData.openFiles?.length > 0 ? sessionData.openFiles[sessionData.openFiles.length - 1] : null);
+            // Use requestAnimationFrame so the synchronous renderFileTree() / updateTabs() calls
+            // that follow loadSession() always complete before openFile() runs.
+            if (pathToOpen && (fileStructure[pathToOpen] || pathToOpen.startsWith("untitled://"))) {
+                requestAnimationFrame(() => openFile(pathToOpen));
             }
         } else {
             initEmptySession();

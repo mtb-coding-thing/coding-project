@@ -63,6 +63,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     codeEditor.on('cursorActivity', updateStatusBar);
+    codeEditor.on('scroll', () => {
+        if (settings.bracketColorization) requestAnimationFrame(applyBracketColorizationToEditor);
+    });
+    codeEditor.on('change', () => {
+        if (settings.bracketColorization) requestAnimationFrame(applyBracketColorizationToEditor);
+    });
 
     if (!fileStructure || !fileStructure.root) { fileStructure = { 'root': { type: 'folder', children: [], expanded: true, displayName: 'root' } }; }
     
@@ -74,6 +80,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadSession();
 
     updatePreviewLayout();
+
+    // Initialise minimap now that the editor and session are ready
+    if (typeof initMinimap === 'function') initMinimap();
 
     document.addEventListener('keydown', async (e) => {
         if (e.key === 'Escape') { 
