@@ -35,7 +35,7 @@ CodeEdit is a fully open-source, portable, persistent, and lightweight code edit
 *   **Minimap**: A canvas-based minimap sits to the right of the editor. Click anywhere on it to jump to that position, or drag the viewport band to scroll.
 
 ## 🎨 Appearance & Themes
-*   **Theme**: Choose from five editor themes in Settings — **Dark (Monokai)**, **Dracula**, **Solarized Dark**, **Solarized Light**, and **Light**. The entire UI chrome (sidebar, toolbar, tabs, status bar, menus) updates to complement the active theme, with distinct shading steps between each layer.
+*   **Theme**: Choose from five editor themes in Settings — **Dark (Monokai)**, **Dracula**, **Solarized Dark**, **Solarized Light**, and **Light**. Each theme has a unique feel.
 *   **Bracket Colorization**: Matching bracket pairs are coloured by nesting depth (three cycling colours). Can be toggled in Settings.
 *   **Font**: The editor uses Fira Code with fallbacks to Consolas and Monaco for ligature and monospace rendering.
 
