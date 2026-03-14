@@ -1,6 +1,19 @@
 # Changes in v0.3.1
 
 ## Bugfixes
+- soon
+
+## Improvements
+- soon
+
+## Additions
+- soon
+
+---
+
+# Changes in v0.3.1
+
+## Bugfixes
 - Fixed a critical bug with v0.3.1 (a syntax error in `layout.js` that caused the entire app to malfunction)
 - Fixed LaTeX preview by correcting regex escaping and refactoring the renderer into a new `js/latex.js` module
 - Fixed root folder not appearing on load (was masked by the `layout.js` syntax error)
