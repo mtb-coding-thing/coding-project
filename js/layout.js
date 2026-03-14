@@ -223,29 +223,32 @@ function toggleDiff() {
 
     const diffBtn = document.getElementById('diffBtn');
     const diffContainer = document.getElementById('diffContainer');
-    const editorWrapper = codeEditor.getWrapperElement();
     const localSearchWidget = document.getElementById('localSearchWidget');
 
     if (isDiffEnabled) {
         // TURN OFF DIFF MODE
         isDiffEnabled = false;
         if (diffBtn) diffBtn.classList.remove('active');
-        
+
         diffContainer.style.display = 'none';
         diffContainer.innerHTML = '';
         diffView = null;
-        
-        editorWrapper.style.display = 'block';
+
+        codeEditor.getWrapperElement().style.flex = '';
+        codeEditor.getWrapperElement().style.overflow = '';
+        codeEditor.getWrapperElement().style.maxHeight = '';
         codeEditor.refresh();
         codeEditor.focus();
     } else {
         // TURN ON DIFF MODE
         isDiffEnabled = true;
         if (diffBtn) diffBtn.classList.add('active');
-        
+
         if (localSearchWidget.style.display !== 'none') closeLocalSearch();
 
-        editorWrapper.style.display = 'none';
+        codeEditor.getWrapperElement().style.flex = '0';
+        codeEditor.getWrapperElement().style.overflow = 'hidden';
+        codeEditor.getWrapperElement().style.maxHeight = '0';
         diffContainer.style.display = 'flex';
         
         const entry = fileStructure[currentFilePath];
