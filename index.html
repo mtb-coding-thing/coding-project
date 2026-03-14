@@ -63,7 +63,9 @@
 
     <!-- Linting Addon & Linters -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jshint/2.13.4/jshint.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsonlint/1.6.3/jsonlint.min.js"></script>
+    <script>/* Minimal jsonlint shim — json-lint.js only needs jsonlint.parse(str) to throw on bad JSON, which JSON.parse already does */
+    window.jsonlint = { parse: function(str) { return JSON.parse(str); } };
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/csslint/1.0.5/csslint.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/lint/lint.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/lint/javascript-lint.js"></script>
