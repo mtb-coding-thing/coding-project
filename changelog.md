@@ -1,5 +1,7 @@
-# Changes in v0.3.2
 *(repo might not be updated as fast as the changelog; as such the changes here might not be there yet)*
+
+# Changes in v0.3.2
+
 ## Bugfixes
 - Fixed a bug that made bracket colorization not work.
 
