@@ -1,5 +1,5 @@
 ## What I'm Currently Working On (v0.3.2)
-- will update this list soon
+- Fix hitbox being too small for tab scrolling
 ---
 
 ## Roadmap for v1.0.0
