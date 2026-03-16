@@ -24,7 +24,7 @@ let pinnedTabs = new Set(); // Set of pinned file paths
 let lastClickedTreePath = null; // Last clicked file or folder in the tree
 let lastClickedTreeTime = 0;   // Timestamp of that click
 
-const VERSION = "0.3.2";
+const VERSION = "0.3.3";
 const SESSION_STORAGE_KEY = `codeEditorSession_${VERSION}`;
 const SETTINGS_STORAGE_KEY = 'codeEditorSettings';
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
