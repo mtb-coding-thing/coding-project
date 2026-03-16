@@ -30,6 +30,7 @@ function applySettings() {
         codeEditor.setOption('tabSize', settings.tabWidth || 4);
         codeEditor.setOption('indentUnit', settings.tabWidth || 4);
         codeEditor.setOption('foldGutter', settings.foldGutter ?? true);
+        codeEditor.setOption('styleActiveLine', settings.activeLineHighlight ?? true);
         codeEditor.refresh();
     }
 
@@ -55,6 +56,9 @@ function applySettings() {
     const bracketColorizationEl = _el('bracketColorization');
     if (bracketColorizationEl) bracketColorizationEl.checked = settings.bracketColorization ?? true;
     applyBracketColorization();
+
+    const activeLineEl = _el('activeLineHighlight');
+    if (activeLineEl) activeLineEl.checked = settings.activeLineHighlight ?? true;
 
     const autoSaveIntervalEl    = _el('autoSaveInterval');
     const autoSaveIntervalMsEl  = _el('autoSaveIntervalMs');
@@ -118,9 +122,8 @@ function applyThemeChrome(theme) {
             '--chrome-sep':          '#3a3a35',
             '--chrome-scrolltrack':  '#16170f',
             '--chrome-scrollthumb':  '#4a4839',
+            '--active-line-bg':      '#32332a',
         },
-
-        // ── Dracula ───────────────────────────────────────────────────────────
         // Cool blue-purple. Clear navy steps from black sidebar to lighter tabs.
         'dracula': {
             '--bg-color':            '#282a36',
@@ -146,9 +149,8 @@ function applyThemeChrome(theme) {
             '--chrome-sep':          '#3d3f4f',
             '--chrome-scrolltrack':  '#15161e',
             '--chrome-scrollthumb':  '#44475a',
+            '--active-line-bg':      '#383a4f',
         },
-
-        // ── Solarized Dark ────────────────────────────────────────────────────
         // Deep teal ocean. Steps from near-black teal to mid-teal to editor.
         'solarized dark': {
             '--bg-color':            '#002b36',
@@ -174,9 +176,8 @@ function applyThemeChrome(theme) {
             '--chrome-sep':          '#0a4555',
             '--chrome-scrolltrack':  '#001b22',
             '--chrome-scrollthumb':  '#0d4455',
+            '--active-line-bg':      '#073642',
         },
-
-        // ── Solarized Light ───────────────────────────────────────────────────
         // Warm parchment. Sidebar is deeper cream, toolbar mid-cream, active lightest.
         // Selected text is dark so it reads on the cream highlight.
         'solarized light': {
@@ -203,9 +204,8 @@ function applyThemeChrome(theme) {
             '--chrome-sep':          '#c8bfa8',
             '--chrome-scrolltrack':  '#ddd5be',
             '--chrome-scrollthumb':  '#b8af98',
+            '--active-line-bg':      '#eee8d5',
         },
-
-        // ── Default (Light) ───────────────────────────────────────────────────
         // Clean neutral grays with strong visible shading steps.
         // Selected text dark on light-blue highlight.
         'default': {
@@ -232,6 +232,7 @@ function applyThemeChrome(theme) {
             '--chrome-sep':          '#c8c8c8',
             '--chrome-scrolltrack':  '#e0e0e0',
             '--chrome-scrollthumb':  '#b8b8b8',
+            '--active-line-bg':      '#eaf4ff',
         },
     };
 
@@ -389,6 +390,14 @@ document.addEventListener('DOMContentLoaded', () => {
         bracketColorizationEl.addEventListener('change', (e) => {
             updateAndSaveSetting('bracketColorization', e.target.checked);
             showNotification(e.target.checked ? 'Bracket colorization enabled.' : 'Bracket colorization disabled.', false, 2000);
+        });
+    }
+
+    const activeLineHighlightEl = _el('activeLineHighlight');
+    if (activeLineHighlightEl) {
+        activeLineHighlightEl.addEventListener('change', (e) => {
+            updateAndSaveSetting('activeLineHighlight', e.target.checked);
+            showNotification(e.target.checked ? 'Active line highlight enabled.' : 'Active line highlight disabled.', false, 2000);
         });
     }
 

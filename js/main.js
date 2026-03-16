@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         lineNumbers: true, tabSize: settings.tabWidth, mode: 'text/plain', theme: settings.theme,
         foldGutter: settings.foldGutter, gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
         matchBrackets: settings.matchBrackets, autoCloseBrackets: settings.autoCloseBrackets, autoCloseTags: settings.autoCloseTags,
-        lineWrapping: settings.wordWrap, lint: true,
+        lineWrapping: settings.wordWrap, lint: true, styleActiveLine: settings.activeLineHighlight ?? true,
         extraKeys: { 
             "Ctrl-Q": cm => cm.foldCode(cm.getCursor()), 
             "Ctrl-F": () => openLocalSearch(false), 

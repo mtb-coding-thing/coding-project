@@ -7,7 +7,7 @@ const defaultSettings = {
     sidebarWidth: '250px', editorPaneFlexBasis: '50%', previewPaneFlexBasis: '50%',
     autoSaveSession: true, autoSaveOnBlur: false, fileTemplates: true,
     bracketColorization: true, autoSaveInterval: false, autoSaveIntervalMs: 30000,
-    treeDeleteWindowMs: 1500
+    treeDeleteWindowMs: 1500, activeLineHighlight: true
 };
 
 const RECENT_FILES_MAX = 20;
@@ -41,6 +41,7 @@ const jsHintOptions = {
 
 let currentSearchQuery = '';
 let isPreviewEnabled = false;
+let _previewScrollHandler = null; // bound scroll handler for preview sync
 let codeEditor;
 let localSearchCaseSensitive = false;
 let globalSearchCaseSensitive = false;

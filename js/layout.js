@@ -94,13 +94,35 @@ function togglePreview() {
     const previewable = currentFilePath && !currentFilePath.startsWith("untitled://") && ['html', 'md', 'tex'].includes(ext);
     if (!previewable) {
         showNotification("Preview only available for HTML, Markdown, and LaTeX files.", true);
-        if (isPreviewEnabled) { isPreviewEnabled = false; updatePreviewLayout(); codeEditor.off('change', updatePreview); }
+        if (isPreviewEnabled) {
+            isPreviewEnabled = false;
+            updatePreviewLayout();
+            codeEditor.off('change', updatePreview);
+            if (_previewScrollHandler) { codeEditor.off('scroll', _previewScrollHandler); _previewScrollHandler = null; }
+        }
         return;
     }
     isPreviewEnabled = !isPreviewEnabled;
     updatePreviewLayout();
-    if (isPreviewEnabled) { updatePreview(); codeEditor.on('change', updatePreview); }
-    else { codeEditor.off('change', updatePreview); }
+    if (isPreviewEnabled) {
+        updatePreview();
+        codeEditor.on('change', updatePreview);
+        _previewScrollHandler = () => {
+            const si = codeEditor.getScrollInfo();
+            const ratio = si.height <= si.clientHeight ? 0 : si.top / (si.height - si.clientHeight);
+            const iframe = document.getElementById('previewFrame');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({ type: 'scrollSync', ratio }, '*');
+            }
+        };
+        codeEditor.on('scroll', _previewScrollHandler);
+    } else {
+        codeEditor.off('change', updatePreview);
+        if (_previewScrollHandler) {
+            codeEditor.off('scroll', _previewScrollHandler);
+            _previewScrollHandler = null;
+        }
+    }
     setTimeout(() => codeEditor.refresh(), 100);
 }
 
@@ -134,6 +156,14 @@ function updatePreview() {
     const content = codeEditor.getValue(); 
     const iframe = document.getElementById('previewFrame');
     const ext = currentFilePath.toLowerCase().split('.').pop();
+
+    // Injected into every srcdoc so the iframe can receive scroll ratio messages
+    const scrollSyncScript = '<script>' +
+        'window.addEventListener(\'message\',function(e){' +
+        'if(e.data&&e.data.type===\'scrollSync\'){' +
+        'var el=document.scrollingElement||document.documentElement;' +
+        'el.scrollTop=e.data.ratio*(el.scrollHeight-el.clientHeight);}});' +
+        '</' + 'script>';
     
     if (ext === 'md') {
         const md = getMarkdownInstance();
@@ -177,14 +207,14 @@ function updatePreview() {
                 table.parentNode.insertBefore(wrapper, table);
                 wrapper.appendChild(table);
             });
-        <\/script>
+        </' + 'script>
         `;
         
-        iframe.srcdoc = styledHtml;
+        iframe.srcdoc = styledHtml + scrollSyncScript;
     } else if (ext === 'html') {
-        iframe.srcdoc = content;
+        iframe.srcdoc = content + scrollSyncScript;
     } else if (ext === 'tex') {
-        iframe.srcdoc = renderLatexToHtml(content);
+        iframe.srcdoc = renderLatexToHtml(content) + scrollSyncScript;
     }
 }
 
