@@ -15,7 +15,7 @@
 - Pressing Delete after clicking a file or folder in the tree within a customizable time window now triggers deletion (with confirmation)
 - Command palette enlarged and redesigned
 - TypeScript, JSX, and TSX now show correctly in the status bar mode indicator
-- Fixed tab scroll hotbar being too small
+- Fixed tab scroll hitbox being too small
 
 ## Additions
 - `treeDeleteWindowMs` setting — configures how long after a tree click the Delete key is intercepted (default 1500ms, range 200–5000ms); exposed in Settings
