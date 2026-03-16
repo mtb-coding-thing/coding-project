@@ -9,7 +9,7 @@
 - soon
 
 ## Additions
-- soon
+- Added a smoothly animated file search feature to CodeEdit, hotkey is `ctrl+P`
 
 ---
 
