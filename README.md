@@ -2,6 +2,9 @@
 
 CodeEdit is a fully open-source, portable, persistent, and lightweight code editor built mainly in JS that runs entirely within your web browser.
 
+## ⚠️ Warning
+**For the stable versions, see releases. Repo code is the current WIP version and might be broken.**
+
 ## 📂 Project & File Management
 *   **New Project**: Resets the current environment and starts a fresh project.
 *   **Open Directory**: Use the **Open Directory** button to load an entire folder structure into the editor. Your browser will keep these files in its local storage database.
