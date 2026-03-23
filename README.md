@@ -47,6 +47,7 @@ There are many settings. Here's a list of them with a short description explaini
 - **Auto-Close Brackets**: automatically closes brackets
 - **Bracket Pair Colorization**: colorizes bracket pairs, with alternating colors for each nested pair
 - **Active Line Highlight**: highlights the current selected line
+- **Code Folding**: whether or not code should be foldable
 - **Word Wrap**: if the code goes off-screen, enabling this would wrap it to the next line but still treat it as one line
 - **File Templates on New Files**: start your new files with prebuilt templates for that specific coding language
 - **Delete Key Window (ms)**: after clicking a file or folder in the tree, the time the editor should wait till the delete key no longer triggers deletion
@@ -74,6 +75,7 @@ Click the **Preview** button to enable the split-pane preview.
 *   **Markdown**: Automatically renders headers, formatting, blockquotes, tables, and code blocks.
 *   **HTML**: Renders the raw HTML content in real-time. (Linked external CSS/JS files are not resolved.)
 *   **LaTeX**: `.tex` and `.bib` files render a live KaTeX preview. Math, sections, lists, and common environments are supported.
+*   **CSV and XLSX**: These render as simple tables with filter functionality.
 
 ## 🛠️ Workspace Isolation
 Because CodeEdit persists your work in your browser's database, you may want to separate different projects. To do this:
@@ -101,6 +103,9 @@ Because CodeEdit persists your work in your browser's database, you may want to 
 | **Go to Line / Column** | `Ctrl + G` |
 | **Toggle Comment** | `Ctrl + /` |
 | **Global Search Focus** | `Ctrl + Shift + G` |
+| **Search Files** | `Ctrl + P` |
+| **Go to Symbol in File** | `Ctrl + Shift + O` |
+| **Regex Search Mode** | `Alt + R` |
 
 ## ⚠️ Known Limitations
 1. No console or compiler yet
