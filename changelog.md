@@ -3,13 +3,23 @@
 # Changes in v0.3.3
 
 ## Bugfixes
-- soon
+- Fixed "Done — 0 item(s) dropped." notification firing on internal file-tree drags — the external-file drop handler and the internal drag handler both lived on `#fileTree`, so `stopPropagation()` didn't prevent them running together; fixed by bailing out of the external handler when `dragSrcPath` is set
+- Fixed CSS linter incorrectly flagging `--custom-property` syntax as invalid and reporting a spurious missing-brace error — `openFile()` had a separate inline lint-setup path that set `lint: true` for CSS with no options, bypassing the `known-properties: false` suppression that `setLanguage()` already applied; both paths now use the same options object; also adds `compatible-vendor-prefixes: false` to suppress related vendor-prefix noise
+- Fixed `closeOtherTabs` and `closeAllTabs` silently skipping pinned tabs with no feedback — both functions now report how many pinned tabs were skipped with a notification
 
 ## Improvements
-- soon
+- Bracket colorization debounced to 300ms — previously fired a full file scan via `requestAnimationFrame` on every single keystroke, which stalled on large files; now matches the existing lint debounce pattern
+- External drag-and-drop highlight on the file tree now uses `var(--accent-color)` outline instead of a hardcoded `#333` background that ignored the active theme
+- Code Folding toggle added to Settings → Editor — the `foldGutter` setting already existed and was applied to the editor, but had no UI control or listener; toggling now immediately refreshes gutters on the active file
+- `closeOtherTabs` and `closeAllTabs` now notify how many pinned tabs were skipped rather than silently leaving them open
+- Line ending detection added to the status bar — displays `LF`, `CRLF`, or `CR`; clicking the indicator cycles through all three, normalises the content, and marks the file unsaved
+- Status bar line ending label is clickable (same `status-goto` style as the Ln/Col indicator)
 
 ## Additions
-- Added a smoothly animated file search feature to CodeEdit, hotkey is `ctrl+P`
+- CSV table viewer — opening a `.csv` file now renders it as a styled, sortable, filterable HTML table in the preview pane instead of raw text; click any column header to sort (numeric-aware, toggles ascending/descending); the filter box narrows rows live with a visible row count; consistent dark theme styling matching the rest of the editor
+- Regex mode in local Find/Replace — `.*` button added to the search widget (hotkey `Alt+R`); when active, the query is treated as a regular expression, validated before searching (red border on invalid pattern), and the input switches to monospace font; integrates with the existing case-sensitive toggle
+- Symbol outline palette (`Ctrl+Shift+O`) — scans the current file and presents a fuzzy-searchable jump list of symbols; covers JS/TS/JSX/TSX functions, classes, arrow functions, types, and interfaces; Python `def`/`class`; Ruby `def`; Go `func`; Rust `fn`/`struct`/`enum`/`trait`/`impl`; Java/C# methods; CSS/SCSS selectors; Markdown headings; LaTeX sections; SQL DDL; navigate with arrow keys, jump with Enter, dismiss with Esc; accessible from the command palette
+- Removed dead `mdTables.js` — `please_work_this_time()` was loaded but never called anywhere; script tag removed from `index.html`
 
 ---
 
