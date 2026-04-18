@@ -9,7 +9,17 @@
 - soon
 
 ## Additions
-- soon
+- CDN failure resilience — added `js/vendor-fallbacks.js`, which loads before all CDN scripts and provides graceful degradation for every optional library:
+  - **`localforage`** — falls back to a `localStorage`-backed shim; session save/load continues to work (with ~5 MB capacity instead of IndexedDB's larger quota)
+  - **`FileSaver`/`saveAs`** — falls back to the anchor-with-`download` trick; file and project downloads still work in all modern browsers
+  - **`markdown-it`** — falls back to a minimal plain-text renderer (headers, paragraphs, blank lines); Markdown preview remains functional rather than broken
+  - **`Prettier`** — falls back to a stub that throws a clear error; `formatCode()` catches it and shows a notification rather than crashing
+  - **`JSHINT`**, **`CSSLint`**, **`diff_match_patch`** — pre-declared as `null` so CDN-addon scripts that check `typeof` before use self-disable cleanly instead of throwing `ReferenceError`
+  - **`fflate`** / **`XLSX`** — no viable runtime shim; existing guards in `fileOps.js` already handle `undefined` for these and show notifications
+  - **CodeMirror** -- a basic fallback which allows reading/writing files
+- Dismissible warning banner shown when any non-critical CDN library falls back to a shim, listing the unavailable libraries
+- `index.html`: `onerror` handler on the CodeMirror core `<script>` tag; inline MIME-type registration block guarded with `typeof CodeMirror !== 'undefined'` check
+- `js/main.js`: `DOMContentLoaded` handler returns early if `CodeMirror` is undefined, preventing a cascade of `ReferenceError`s
 
 ---
 
