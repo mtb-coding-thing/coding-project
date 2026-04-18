@@ -5,12 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enhanced Code Editor</title>
 
+    <!-- Vendor fallbacks — must load BEFORE any CDN script so shims are ready
+         if a CDN tag fires onerror or silently 404s. -->
+    <script src="js/vendor-fallbacks.js"></script>
+
     <!-- CodeMirror Base -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/solarized.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <!-- onerror fires if the CDN returns a network error or a non-JS response -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"
+            onerror="window.onCodeMirrorLoadFailed()"></script>
 
     <!-- CodeMirror Diff / Merge Addon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/merge/merge.min.css">
@@ -26,14 +32,17 @@
     <script>
         // Ensure TypeScript and JSX MIME types are registered — the minified CDN
         // build of the JavaScript mode may not include these definitions.
-        if (CodeMirror.resolveMode('text/typescript').name === 'null') {
-            CodeMirror.defineMIME('text/typescript', { name: 'javascript', typescript: true });
-        }
-        if (CodeMirror.resolveMode('text/jsx').name === 'null') {
-            CodeMirror.defineMIME('text/jsx', { name: 'javascript', jsx: true });
-        }
-        if (CodeMirror.resolveMode('text/typescript-jsx').name === 'null') {
-            CodeMirror.defineMIME('text/typescript-jsx', { name: 'javascript', typescript: true, jsx: true });
+        // Guard against CM failing to load (onCodeMirrorLoadFailed handles that case).
+        if (typeof CodeMirror !== 'undefined') {
+            if (CodeMirror.resolveMode('text/typescript').name === 'null') {
+                CodeMirror.defineMIME('text/typescript', { name: 'javascript', typescript: true });
+            }
+            if (CodeMirror.resolveMode('text/jsx').name === 'null') {
+                CodeMirror.defineMIME('text/jsx', { name: 'javascript', jsx: true });
+            }
+            if (CodeMirror.resolveMode('text/typescript-jsx').name === 'null') {
+                CodeMirror.defineMIME('text/typescript-jsx', { name: 'javascript', typescript: true, jsx: true });
+            }
         }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
@@ -313,6 +322,8 @@
     </div>
 
     <!-- Custom Scripts -->
+    <!-- Activate any vendor fallbacks needed (called after all CDN scripts) -->
+    <script>if (typeof initVendorFallbacks === 'function') initVendorFallbacks();</script>
     <!-- Submodules -->
     <script src="js/filetree/render.js"></script>
     <script src="js/filetree/treeOps.js"></script>
