@@ -23,6 +23,7 @@ The ambitious goal of this editor is to eventually make the user question not wh
     *   An asterisk (`*`) indicates unsaved changes.
     *   Warnings appear when attempting to close a tab with unsaved changes.
     *   **Pin tabs** by right-clicking and selecting Pin — pinned tabs show a coloured top border and stay anchored to the left. Pinned tabs cannot close. To close, unpin the tab first.
+        * Files can also be pinned by right clicking a file in the tree and selecting "Open and Pin."
     *   Use `Ctrl+Tab` / `Ctrl+Shift+Tab` to cycle between open tabs.
 *   **Local Search & Replace**: Press `Ctrl+F` (Find) or `Ctrl+H` (Replace) to open the floating widget in the top-right of the editor.
     *   Click the **Aa** button (or press `Alt+C` while the widget is open) to toggle **case-sensitive** matching.
