@@ -148,17 +148,23 @@ function performGlobalReplace() {
 
 function displaySearchResults(results, query) { 
     const searchResultsDiv = document.getElementById('searchResults'); searchResultsDiv.innerHTML = ''; 
-    const closeBtn = document.createElement('button'); closeBtn.textContent = 'Close'; closeBtn.style.float = 'right'; closeBtn.style.padding = '2px 6px'; closeBtn.style.fontSize = '12px'; closeBtn.onclick = () => { searchResultsDiv.style.display = 'none'; }; searchResultsDiv.appendChild(closeBtn); 
+    const closeBtn = document.createElement('button'); 
+    closeBtn.textContent = 'Close'; 
+    closeBtn.type = 'button';
+    closeBtn.className = 'search-close-btn';
+    closeBtn.style.position = 'absolute';
+    closeBtn.style.top = '10px';
+    closeBtn.style.right = '10px';
+    closeBtn.onclick = (e) => { e.stopPropagation(); clearSearch(); }; 
+    searchResultsDiv.style.position = 'relative';
     if (results.length === 0) { 
         const noResults = document.createElement('div'); noResults.textContent = 'No results found.'; searchResultsDiv.appendChild(noResults); 
     } else {
-        // Fix #8: Show result count summary at the top (X matches in Y files).
         const fileCount = new Set(results.map(r => r.path)).size;
         const summary = document.createElement('div');
         summary.className = 'search-summary';
         summary.textContent = `${results.length} match${results.length !== 1 ? 'es' : ''} in ${fileCount} file${fileCount !== 1 ? 's' : ''}`;
         searchResultsDiv.appendChild(summary);
-
         results.forEach(result => { 
             const div = document.createElement('div'); div.className = 'search-result'; 
             const escapedText = escapeHtml(result.text);
@@ -169,6 +175,7 @@ function displaySearchResults(results, query) {
             searchResultsDiv.appendChild(div); 
         }); 
     } 
+    searchResultsDiv.appendChild(closeBtn); // append LAST for highest stacking order
     searchResultsDiv.style.display = 'block'; 
 }
 
