@@ -37,6 +37,9 @@
 - `index.html`: `onerror` handler on the CodeMirror core `<script>` tag; inline MIME-type registration block guarded with `typeof CodeMirror !== 'undefined'` check
 - `js/main.js`: `DOMContentLoaded` handler returns early if `CodeMirror` is undefined, preventing a cascade of `ReferenceError`s
 
+## Other
+- Added meticulous diagnostic console logging to the editor scrollbar(s) to see why they won't adhere to theme styling and instead use default OS versions.
+
 ---
 
 # Changes in v0.3.3
