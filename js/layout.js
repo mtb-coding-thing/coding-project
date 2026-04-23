@@ -91,9 +91,9 @@ function initEditorPreviewResize() {
 
 function togglePreview() {
     const ext = currentFilePath ? currentFilePath.toLowerCase().split('.').pop() : '';
-    const previewable = currentFilePath && !currentFilePath.startsWith("untitled://") && ['html', 'md', 'tex', 'csv', 'xlsx'].includes(ext);
+    const previewable = currentFilePath && !currentFilePath.startsWith("untitled://") && ['html', 'htm', 'md', 'markdown', 'tex', 'latex', 'ltx', 'csv', 'xlsx', 'svg'].includes(ext);
     if (!previewable) {
-        showNotification("Preview only available for HTML, Markdown, LaTeX, CSV, and XLSX files.", true);
+        showNotification("Preview only available for HTML, Markdown, LaTeX, CSV, XLSX, and SVG files.", true);
         if (isPreviewEnabled) {
             isPreviewEnabled = false;
             updatePreviewLayout();
@@ -133,7 +133,7 @@ function updatePreviewLayout() {
     const resizeHandle = document.getElementById('editorPreviewResizeHandle');
     const previewBtn = document.getElementById('previewBtn');
     const ext = currentFilePath ? currentFilePath.toLowerCase().split('.').pop() : '';
-    const canPreview = currentFilePath && !currentFilePath.startsWith("untitled://") && ['html', 'md', 'tex', 'csv', 'xlsx'].includes(ext);
+    const canPreview = currentFilePath && !currentFilePath.startsWith("untitled://") && ['html', 'htm', 'md', 'markdown', 'tex', 'latex', 'ltx', 'csv', 'xlsx', 'svg'].includes(ext);
 
     if (isPreviewEnabled && canPreview) {
         editorPane.style.flexBasis = settings.editorPaneFlexBasis || defaultSettings.editorPaneFlexBasis;
@@ -165,7 +165,7 @@ function updatePreview() {
         'el.scrollTop=e.data.ratio*(el.scrollHeight-el.clientHeight);}});' +
         '</' + 'script>';
     
-    if (ext === 'md') {
+    if (ext === 'md' || ext === 'markdown') {
         const md = getMarkdownInstance();
         if (!md) { showNotification("Markdown library not loaded.", true); return; }
         
@@ -211,15 +211,22 @@ function updatePreview() {
         `;
         
         iframe.srcdoc = styledHtml + scrollSyncScript;
-    } else if (ext === 'html') {
+    } else if (ext === 'html' || ext === 'htm') {
         iframe.srcdoc = content + scrollSyncScript;
-    } else if (ext === 'tex') {
+    } else if (ext === 'tex' || ext === 'latex' || ext === 'ltx') {
         iframe.srcdoc = renderLatexToHtml(content) + scrollSyncScript;
     } else if (ext === 'csv') {
         iframe.srcdoc = renderCsvToHtml(content);
     } else if (ext === 'xlsx') {
         // XLSX content in the editor is already the CSV representation — render as table
         iframe.srcdoc = renderCsvToHtml(content);
+    } else if (ext === 'svg') {
+        iframe.srcdoc = `<!DOCTYPE html><html><head><style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { background: #1e1e1e; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+            .svg-wrap { max-width: 100%; max-height: 100vh; display: flex; justify-content: center; align-items: center; }
+            .svg-wrap svg { max-width: 100%; max-height: 90vh; width: auto; height: auto; }
+        </style></head><body><div class="svg-wrap">${content}</div></body></html>`;
     }
 }
 

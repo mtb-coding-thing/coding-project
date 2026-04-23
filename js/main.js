@@ -297,9 +297,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 filesProcessed++; resolveEntry();
                             };
                             reader.onerror = () => { filesProcessed++; rejectEntry(); };
-                            if (/\.(png|jpe?g|gif|svg)$/i.test(file.name) || /\.(xlsx)$/i.test(file.name)) reader.readAsDataURL(file);
-                            else if (file.type.startsWith('text/') || !file.name.includes('.') || /\.(txt|js|css|html|py|json|md|xml|yaml|yml|sh|sql|c|cpp|h|hpp|java|php|rb|go|rs|swift|kt|lua|pl|r|dockerfile|ini|properties|toml|log|csv|bat|ts|jsx|tsx|scss|sass|vue|svelte|tex|bib)$/i.test(file.name)) reader.readAsText(file);
-                            else { createFile(`${baseDropPath}/${currentPathInZip}`, `[Binary file]`, false); filesProcessed++; resolveEntry(); }
+                            const readMode = getFileReadMode(file.name);
+                            if (readMode === 'dataurl') reader.readAsDataURL(file);
+                            else if (readMode === 'text') reader.readAsText(file);
+                            else { createFile(`${baseDropPath}/${currentPathInZip}`, `[Binary file: ${file.name}]`, false); filesProcessed++; resolveEntry(); }
                         }, (err) => { filesProcessed++; rejectEntry(err); });
                     } else if (entry.isDirectory) {
                         if (SKIP_DIRS.has(entry.name)) { filesProcessed++; resolveEntry(); return; }

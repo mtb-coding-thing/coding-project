@@ -4,6 +4,50 @@ const SKIP_DIRS = new Set([
     '.parcel-cache', '.turbo', 'vendor'
 ]);
 
+// Extensions that must be read as a base64 data URL rather than text.
+// Images are displayed in the preview pane; xlsx/xls are parsed by the XLSX library from base64.
+// SVG is intentionally excluded — it is valid XML and opens as editable text in the editor.
+const DATAURL_EXTENSIONS = new Set([
+    'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'tiff', 'tif', 'avif',
+    'xlsx', 'xls',
+]);
+
+// Known binary extensions that cannot be meaningfully opened as text.
+// Everything NOT in this set and NOT in DATAURL_EXTENSIONS is read as text.
+// Using a denylist means unknown/new text-based formats work automatically.
+const BINARY_EXTENSIONS = new Set([
+    // Archives
+    'zip', 'rar', 'gz', 'tar', 'bz2', 'xz', '7z', 'zst', 'lz4',
+    // Compiled / object code
+    'exe', 'dll', 'so', 'dylib', 'lib', 'a', 'o', 'obj', 'wasm',
+    'class', 'jar', 'war', 'ear', 'pyc', 'pyd', 'pyo',
+    // Documents (binary formats)
+    'pdf', 'doc', 'docx', 'ppt', 'pptx', 'odt', 'ods', 'odp',
+    // Fonts
+    'ttf', 'otf', 'woff', 'woff2', 'eot',
+    // Audio
+    'mp3', 'wav', 'flac', 'aac', 'ogg', 'opus', 'm4a', 'wma', 'aiff',
+    // Video
+    'mp4', 'mov', 'avi', 'mkv', 'webm', 'wmv', 'flv', 'm4v', 'mpeg', 'mpg',
+    // Images (also in DATAURL_EXTENSIONS; listed here so BINARY_EXTENSIONS is self-contained)
+    'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'tiff', 'tif', 'avif',
+    // Spreadsheets (binary; also in DATAURL_EXTENSIONS for the XLSX parser)
+    'xlsx', 'xls',
+    // Databases
+    'sqlite', 'sqlite3', 'db',
+]);
+
+/**
+ * Returns how a file should be read given its name.
+ * @returns {'dataurl' | 'binary' | 'text'}
+ */
+function getFileReadMode(fileName) {
+    const ext = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
+    if (DATAURL_EXTENSIONS.has(ext)) return 'dataurl';
+    if (BINARY_EXTENSIONS.has(ext)) return 'binary';
+    return 'text';
+}
+
 async function newProject() {
     const hasUnsavedChanges = Array.from(openTabs.values()).some(tabData => tabData.unsaved) || (!currentFilePath && codeEditor.getValue().length > 0);
     if (openTabs.size > 0 || hasUnsavedChanges) {
@@ -83,12 +127,13 @@ async function handleDirectoryUpload(event) {
             };
             reader.onerror = () => { failedFiles.push(file.name); reject(new Error(`Could not read file ${file.name}`)); };
             
-            if (/\.(png|jpe?g|gif|svg)$/i.test(file.name) || /\.(xlsx)$/i.test(file.name)) {
+            const readMode = getFileReadMode(file.name);
+            if (readMode === 'dataurl') {
                 reader.readAsDataURL(file);
-            } else if (file.type.startsWith('text/') || !file.name.includes('.') || /\.(txt|js|css|html|py|json|md|xml|yaml|yml|sh|sql|c|cpp|h|hpp|java|php|rb|go|rs|swift|kt|lua|pl|r|dockerfile|ini|properties|toml|log|csv|bat|ts|jsx|tsx|scss|sass|vue|svelte)$/i.test(file.name)) {
+            } else if (readMode === 'text') {
                 reader.readAsText(file);
             } else {
-                createFile(internalPath, `[Binary or unsupported file: ${file.name}]`, false); resolve();
+                createFile(internalPath, `[Binary file: ${file.name}]`, false); resolve();
             }
         }));
     }
@@ -189,7 +234,7 @@ function downloadCurrentFile() {
         ? fileStructure[currentFilePath].displayName 
         : currentFilePath.split('/').pop();
         
-    if (/\.(png|jpe?g|gif|svg)$/i.test(fileName) && content.startsWith('data:image')) {
+    if (DATAURL_EXTENSIONS.has(fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '') && content.startsWith('data:')) {
         const link = document.createElement("a");
         link.href = content;
         link.download = fileName;
@@ -228,9 +273,10 @@ async function openFile(filePath) {
 
     if (content === null || typeof content === 'undefined') { content = ""; fileEntry.content = ""; }
     const estimatedSize = new Blob([content]).size;
-    if (estimatedSize > LARGE_FILE_THRESHOLD_BYTES && !filePath.toLowerCase().endsWith('.xlsx') && !filePath.startsWith("untitled://")) { isLargeFile = true; showNotification(`Large file mode active for "${filePath.split('/').pop()}".`, false, 4000); }
+    const fileExt = filePath.includes('.') ? filePath.split('.').pop().toLowerCase() : '';
+    if (estimatedSize > LARGE_FILE_THRESHOLD_BYTES && !DATAURL_EXTENSIONS.has(fileExt) && !filePath.startsWith("untitled://")) { isLargeFile = true; showNotification(`Large file mode active for "${filePath.split('/').pop()}".`, false, 4000); }
 
-    if (/\.(png|jpe?g|gif|svg)$/i.test(filePath) && content.startsWith('data:image')) {
+    if (DATAURL_EXTENSIONS.has(fileExt) && !['xlsx','xls'].includes(fileExt) && content.startsWith('data:image')) {
         const previewPane = document.getElementById('previewPane');
         const iframe = document.getElementById('previewFrame');
         document.getElementById('editorPane').style.display = 'none';
@@ -269,8 +315,8 @@ async function openFile(filePath) {
     }
 
     if (filePath.startsWith("untitled://")) { isReadOnly = false; }
-    else if (typeof content === 'string' && content.startsWith('[Binary') && !filePath.toLowerCase().endsWith('.xlsx')) { isReadOnly = true; }
-    else if (filePath.toLowerCase().endsWith('.xlsx')) {
+    else if (typeof content === 'string' && content.startsWith('[Binary') && !DATAURL_EXTENSIONS.has(fileExt)) { isReadOnly = true; }
+    else if (['xlsx', 'xls'].includes(fileExt)) {
         if (typeof XLSX === 'undefined') { showNotification("XLSX library not loaded.", true); return; }
         try { let base64Content = content; if (typeof content === 'string' && content.startsWith('data:')) { base64Content = content.substring(content.indexOf(',') + 1); } content = loadFileData(filePath.split('/').pop(), base64Content); isReadOnly = true; showNotification("XLSX opened as read-only CSV. Use Preview for table view.", false, 4000); }
         catch (e) { content = `Error opening XLSX: ${e.message}`; isReadOnly = true; }
@@ -314,7 +360,7 @@ async function openFile(filePath) {
         }
     }
 
-    const isPreviewable = !filePath.startsWith("untitled://") && /\.(html?|md|tex|csv|xlsx)$/i.test(filePath);
+    const isPreviewable = !filePath.startsWith("untitled://") && /\.(html?|md|markdown|tex|latex|ltx|csv|xlsx|svg)$/i.test(filePath);
     if (isPreviewEnabled && !isPreviewable) { isPreviewEnabled = false; updatePreviewLayout(); codeEditor.off('change', updatePreview); }
     else if (isPreviewEnabled && isPreviewable) { updatePreviewLayout(); updatePreview(); }
 
@@ -398,7 +444,7 @@ async function downloadFolder(folderPath) {
 function getModeForFile(filePath) {
     if (filePath.startsWith("untitled://")) return 'text/plain';
     const ext = filePath.split('.').pop().toLowerCase();
-    const modeMap = { 'html': 'htmlmixed', 'htm': 'htmlmixed', 'js': 'javascript', 'mjs': 'javascript', 'cjs': 'javascript', 'ts': 'text/typescript', 'jsx': 'text/jsx', 'tsx': 'text/typescript-jsx', 'py': 'python', 'css': 'css', 'scss': 'text/x-scss', 'less': 'text/x-less', 'json': 'application/json', 'md': 'markdown', 'markdown': 'markdown', 'xml': 'xml', 'yaml': 'text/x-yaml', 'yml': 'text/x-yaml', 'sh': 'text/x-sh', 'bash': 'text/x-sh', 'sql': 'text/x-sql', 'java': 'text/x-java', 'c': 'text/x-csrc', 'h': 'text/x-csrc', 'cpp': 'text/x-c++src', 'hpp': 'text/x-c++src', 'cc': 'text/x-c++src', 'cs': 'text/x-csharp', 'php': 'application/x-httpd-php', 'rb': 'text/x-ruby', 'go': 'go', 'rs': 'rust', 'swift': 'text/x-swift', 'kt': 'text/x-kotlin', 'lua': 'text/x-lua', 'pl': 'text/x-perl', 'r': 'text/x-rsrc', 'dockerfile': 'text/x-dockerfile', 'ini': 'text/x-properties', 'properties': 'text/x-properties', 'toml': 'text/x-toml', 'csv': 'text/plain', 'log': 'text/plain', 'txt': 'text/plain', 'bat': 'text/plain', 'sass': 'text/x-sass', 'vue': 'text/x-vue', 'svelte': 'text/x-svelte', 'tex': 'text/x-stex', 'bib': 'text/x-stex' };
+    const modeMap = { 'html': 'htmlmixed', 'htm': 'htmlmixed', 'js': 'javascript', 'mjs': 'javascript', 'cjs': 'javascript', 'ts': 'text/typescript', 'jsx': 'text/jsx', 'tsx': 'text/typescript-jsx', 'py': 'python', 'css': 'css', 'scss': 'text/x-scss', 'less': 'text/x-less', 'json': 'application/json', 'jsonc': 'application/json', 'md': 'markdown', 'markdown': 'markdown', 'xml': 'xml', 'xhtml': 'xml', 'svg': 'xml', 'yaml': 'text/x-yaml', 'yml': 'text/x-yaml', 'sh': 'text/x-sh', 'bash': 'text/x-sh', 'zsh': 'text/x-sh', 'fish': 'text/x-sh', 'sql': 'text/x-sql', 'java': 'text/x-java', 'c': 'text/x-csrc', 'h': 'text/x-csrc', 'cpp': 'text/x-c++src', 'hpp': 'text/x-c++src', 'cc': 'text/x-c++src', 'hh': 'text/x-c++src', 'cxx': 'text/x-c++src', 'cs': 'text/x-csharp', 'php': 'application/x-httpd-php', 'rb': 'text/x-ruby', 'go': 'go', 'rs': 'rust', 'swift': 'text/x-swift', 'kt': 'text/x-kotlin', 'kts': 'text/x-kotlin', 'lua': 'text/x-lua', 'pl': 'text/x-perl', 'pm': 'text/x-perl', 'r': 'text/x-rsrc', 'dockerfile': 'text/x-dockerfile', 'ini': 'text/x-properties', 'properties': 'text/x-properties', 'toml': 'text/x-toml', 'csv': 'text/plain', 'tsv': 'text/plain', 'log': 'text/plain', 'txt': 'text/plain', 'bat': 'text/plain', 'cmd': 'text/plain', 'lock': 'text/plain', 'sass': 'text/x-sass', 'vue': 'text/x-vue', 'svelte': 'text/x-svelte', 'tex': 'text/x-stex', 'latex': 'text/x-stex', 'ltx': 'text/x-stex', 'bib': 'text/x-stex', 'graphql': 'graphql', 'gql': 'graphql' };
     return modeMap[ext] || 'text/plain';
 }
 
@@ -446,9 +492,10 @@ async function handleFileUpload(event) {
     };
     reader.onerror = () => { showNotification(`Error reading file "${file.name}".`, true); };
     
-    if (/\.(png|jpe?g|gif|svg)$/i.test(file.name) || /\.(xlsx)$/i.test(file.name)) reader.readAsDataURL(file);
-    else if (file.type.startsWith('text/') || !file.name.includes('.') || /\.(txt|js|css|html|py|json|md|xml|yaml|yml|sh|sql|c|cpp|h|hpp|java|php|rb|go|rs|swift|kt|lua|pl|r|dockerfile|ini|properties|toml|log|csv|bat|ts|jsx|tsx|scss|sass|vue|svelte)$/i.test(file.name)) reader.readAsText(file);
-    else { createFile(`${currentWorkingDirectory || 'root'}/${file.name}`, `[Binary or unsupported file: ${file.name}]`, false); renderFileTree(); showNotification(`File "${file.name}" uploaded as placeholder.`); if (settings.autoSaveSession) saveSession(); }
+    const readMode = getFileReadMode(file.name);
+    if (readMode === 'dataurl') reader.readAsDataURL(file);
+    else if (readMode === 'text') reader.readAsText(file);
+    else { createFile(`${currentWorkingDirectory || 'root'}/${file.name}`, `[Binary file: ${file.name}]`, false); renderFileTree(); showNotification(`File "${file.name}" uploaded as placeholder.`); if (settings.autoSaveSession) saveSession(); }
     event.target.value = null;
 }
 
@@ -506,7 +553,9 @@ function getFileTemplate(fileName) {
         'php': `<?php\n\n`,
         'vue': `<template>\n${indent}<div>\n${indent}${indent}\n${indent}</div>\n</template>\n\n<script>\nexport default {\n${indent}name: '${fileName.replace(/\.vue$/, '')}',\n};\n</script>\n\n<style scoped>\n</style>\n`,
         'svelte': `<script>\n${indent}\n</script>\n\n<div>\n${indent}\n</div>\n\n<style>\n</style>\n`,
-        'tex': `\\documentclass{article}\n\n\\title{${fileName.replace(/\.tex$/, '')}}\n\\author{}\n\\date{\\today}\n\n\\begin{document}\n\n\\maketitle\n\n\\section{Introduction}\n\n\\end{document}\n`,
+        'tex': `\\documentclass{article}\n\n\\title{${fileName.replace(/\.(tex|latex|ltx)$/, '')}}\n\\author{}\n\\date{\\today}\n\n\\begin{document}\n\n\\maketitle\n\n\\section{Introduction}\n\n\\end{document}\n`,
+        'latex': `\\documentclass{article}\n\n\\title{${fileName.replace(/\.(tex|latex|ltx)$/, '')}}\n\\author{}\n\\date{\\today}\n\n\\begin{document}\n\n\\maketitle\n\n\\section{Introduction}\n\n\\end{document}\n`,
+        'ltx': `\\documentclass{article}\n\n\\title{${fileName.replace(/\.(tex|latex|ltx)$/, '')}}\n\\author{}\n\\date{\\today}\n\n\\begin{document}\n\n\\maketitle\n\n\\section{Introduction}\n\n\\end{document}\n`,
         'bib': `@article{key,\n${indent}author = {},\n${indent}title  = {},\n${indent}year   = {},\n${indent}journal = {},\n}\n`,
     };
     return templates[ext] ?? '';
