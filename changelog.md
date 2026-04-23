@@ -3,10 +3,12 @@
 # Changes in v0.3.4
 
 ## Bugfixes
-- soon
+- Fixed an image rendering issue
 
 ## Improvements
-- soon
+- Pinned tabs are now saved to session data
+- Added "Open and Pin" option to the right-click context menu for files.
+- Pressing ENTER while writing a list in an .md file now automatically indents and adds the appropriate list symbol (autoincrements for numbered lists). Pressing enter with only a list symbol escapes this functionality.
 
 ## Additions
 - CDN failure resilience — added `js/vendor-fallbacks.js`, which loads before all CDN scripts and provides graceful degradation for every optional library:
