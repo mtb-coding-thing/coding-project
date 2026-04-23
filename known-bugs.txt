@@ -1,3 +1,2 @@
 Minor bug: "Done — 0 item(s) dropped." status message when dragdropping an item within the explorer (this has existed for quite some time and I have no clue how to fix it).
-The "close" button doesn't close the global search results.
 
