@@ -4,6 +4,7 @@
 
 ## Bugfixes
 - Fixed an image rendering issue
+- Fixed the diff view
 
 ## Improvements
 - Pinned tabs are now saved to session data
