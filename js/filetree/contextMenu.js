@@ -27,6 +27,18 @@ function showContextMenu(path, x, y) {
 
         if (entry.type === 'file') {
             const duplicateDiv = document.createElement('div'); duplicateDiv.textContent = 'Duplicate'; duplicateDiv.onclick = () => { duplicateEntry(path); closeContextMenu(); }; menu.appendChild(duplicateDiv);
+            const openPinDiv = document.createElement('div');
+            openPinDiv.textContent = pinnedTabs.has(path) ? 'Open (already pinned)' : 'Open and Pin';
+            openPinDiv.onclick = () => {
+                openFile(path);
+                pinnedTabs.add(path);
+                const tabData = openTabs.get(path);
+                if (tabData) tabData.tabElement = null; // force recreate with pin icon
+                updateTabs();
+                if (settings.autoSaveSession) saveSession();
+                closeContextMenu();
+            };
+            menu.appendChild(openPinDiv);
         }
 
         const renameDiv = document.createElement('div'); renameDiv.textContent = 'Rename'; renameDiv.onclick = () => { startRenaming(path); closeContextMenu(); }; menu.appendChild(renameDiv);
