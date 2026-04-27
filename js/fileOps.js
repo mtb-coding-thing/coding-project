@@ -503,9 +503,13 @@ function createFolder(fullPath, expanded = false) {
     if (fileStructure[fullPath]) return;
     const parts = fullPath.split('/'); const name = parts.pop(); const parentPath = parts.join('/') || 'root';
     if (!fileStructure[parentPath] || fileStructure[parentPath].type !== 'folder') return;
+    
     fileStructure[fullPath] = { type: 'folder', children: [], expanded: expanded, isUntitled: false };
-    fileStructure[parentPath].children.push(name);
-    fileStructure[parentPath].children.sort((a, b) => { const pathA = `${parentPath}/${a}`, pathB = `${parentPath}/${b}`, typeA = fileStructure[pathA]?.type || 'f', typeB = fileStructure[pathB]?.type || 'f'; if (typeA[0] == 'f' && typeB[0] != 'f') return 1; if (typeA[0] != 'f' && typeB[0] == 'f') return -1; return a.localeCompare(b); });
+    
+    if (!fileStructure[parentPath].children.includes(name)) {
+        fileStructure[parentPath].children.push(name);
+        fileStructure[parentPath].children.sort((a, b) => { const pathA = `${parentPath}/${a}`, pathB = `${parentPath}/${b}`, typeA = fileStructure[pathA]?.type || 'f', typeB = fileStructure[pathB]?.type || 'f'; if (typeA[0] == 'f' && typeB[0] != 'f') return 1; if (typeA[0] != 'f' && typeB[0] == 'f') return -1; return a.localeCompare(b); });
+    }
 }
 
 function createFile(fullPath, content = '', unsaved = false) {

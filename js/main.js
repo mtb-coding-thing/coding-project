@@ -1,4 +1,3 @@
-
 function toggleToolbarMenu(e) {
     e.stopPropagation();
     const menu = document.getElementById('toolbarOverflowMenu');
@@ -129,58 +128,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     await loadSession();
 
-    // ── Scrollbar diagnostics ──────────────────────────────────────────────
-    // Logs everything needed to debug themed scrollbars on Edge/Windows.
-    // Remove once the scrollbar styling issue is confirmed fixed.
-    setTimeout(() => {
-        try {
-            const scrollEl = document.querySelector('.CodeMirror-scroll');
-            if (!scrollEl) { console.warn('[Scrollbar] .CodeMirror-scroll not found'); return; }
-
-            const cs = getComputedStyle(scrollEl);
-
-            // 1. Standard CSS scrollbar properties (Chrome 121+, Edge 121+, Firefox)
-            console.group('[Scrollbar] Diagnostics');
-            console.log('scrollbar-color (standard):', cs.getPropertyValue('scrollbar-color') || '(not set / not supported)');
-            console.log('scrollbar-width (standard):', cs.getPropertyValue('scrollbar-width') || '(not set / not supported)');
-
-            // 2. CSS custom property values as resolved on :root
-            const rootCS = getComputedStyle(document.documentElement);
-            console.log('--chrome-scrollthumb resolved:', rootCS.getPropertyValue('--chrome-scrollthumb').trim() || '(empty)');
-            console.log('--chrome-scrolltrack resolved:', rootCS.getPropertyValue('--chrome-scrolltrack').trim() || '(empty)');
-
-            // 3. overflow values (CM needs these for scrollbars to exist at all)
-            console.log('overflow-x:', cs.overflowX);
-            console.log('overflow-y:', cs.overflowY);
-
-            // 4. Actual element dimensions
-            console.log('clientWidth / scrollWidth:', scrollEl.clientWidth, '/', scrollEl.scrollWidth);
-            console.log('clientHeight / scrollHeight:', scrollEl.clientHeight, '/', scrollEl.scrollHeight);
-
-            // 5. Browser / platform info
-            console.log('userAgent:', navigator.userAgent);
-
-            // 6. Check whether ::-webkit-scrollbar rules are in any stylesheet
-            let webkitRuleFound = false;
-            for (const sheet of document.styleSheets) {
-                try {
-                    for (const rule of sheet.cssRules) {
-                        if (rule.selectorText && rule.selectorText.includes('-webkit-scrollbar')) {
-                            webkitRuleFound = true;
-                            console.log('webkit rule found in sheet:', sheet.href || '(inline)', '|', rule.selectorText, '->', rule.style.cssText);
-                        }
-                    }
-                } catch (_) { /* cross-origin sheets throw */ }
-            }
-            if (!webkitRuleFound) console.warn('[Scrollbar] No -webkit-scrollbar rules found in any accessible stylesheet!');
-
-            console.groupEnd();
-        } catch (e) {
-            console.error('[Scrollbar] Diagnostic error:', e);
-        }
-    }, 1000);
-    // ── End scrollbar diagnostics ──────────────────────────────────────────
-
     updatePreviewLayout();
 
     // Initialise minimap now that the editor and session are ready
@@ -257,13 +204,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     document.getElementById('replaceInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') performGlobalReplace(); });
 
+    // Prevent default drag and drop behavior for the entire document to avoid accidental navigation away from app
+    document.addEventListener('dragover', (e) => e.preventDefault());
+    document.addEventListener('drop', (e) => e.preventDefault());
+
     const dropZone = document.getElementById('fileTree');
-    dropZone.addEventListener('dragover', (e) => { if (dragSrcPath) return; e.preventDefault(); dropZone.style.outline = '2px solid var(--accent-color)'; dropZone.style.outlineOffset = '-2px'; });
-    dropZone.addEventListener('dragleave', () => { if (dragSrcPath) return; dropZone.style.outline = ''; dropZone.style.outlineOffset = ''; });
+    dropZone.addEventListener('dragover', (e) => { 
+        if (dragSrcPath) return; 
+        e.preventDefault(); 
+        dropZone.style.outline = '2px solid var(--accent-color)'; 
+        dropZone.style.outlineOffset = '-2px'; 
+    });
+    dropZone.addEventListener('dragleave', () => { 
+        if (dragSrcPath) return; 
+        dropZone.style.outline = ''; 
+        dropZone.style.outlineOffset = ''; 
+    });
+    
     dropZone.addEventListener('drop', async (e) => {
-        // Internal tree drags are handled entirely by dragDrop.js.
-        // dragSrcPath is set for the duration of any internal drag, so
-        // bailing here prevents the external-file handler from running.
         if (dragSrcPath) return;
         
         e.preventDefault(); 
@@ -271,11 +229,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         dropZone.style.outlineOffset = '';
 
         const items = e.dataTransfer.items;
-        if (!items || items.length === 0) return;
+        const files = e.dataTransfer.files;
+
+        if ((!items || items.length === 0) && (!files || files.length === 0)) return;
 
         showNotification('Processing dropped items...', false, 3000);
         let filesProcessed = 0; 
-        const processQueue = [];
         
         const targetDropElement = e.target.closest('li[data-path]');
         let baseDropPath = currentWorkingDirectory || 'root';
@@ -288,8 +247,44 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
+        // --- MODERN API: File System Access API ---
+        const processHandle = async (handle, currentParentPath) => {
+            if (handle.kind === 'file') {
+                const file = await handle.getFile();
+                if (file.size > MAX_FILE_SIZE_BYTES) {
+                    createFile(`${currentParentPath}/${file.name}`, `[File too large: ${file.name}]`, false);
+                    filesProcessed++; return;
+                }
+                await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const fullPath = `${currentParentPath}/${file.name}`;
+                        if (!fileStructure[fullPath] || fileStructure[fullPath].isUntitled) {
+                            createFile(fullPath, event.target.result, false);
+                        }
+                        filesProcessed++; resolve();
+                    };
+                    reader.onerror = () => { filesProcessed++; resolve(); };
+                    const readMode = getFileReadMode(file.name);
+                    if (readMode === 'dataurl') reader.readAsDataURL(file);
+                    else if (readMode === 'text') reader.readAsText(file);
+                    else { createFile(`${currentParentPath}/${file.name}`, `[Binary file: ${file.name}]`, false); filesProcessed++; resolve(); }
+                });
+            } else if (handle.kind === 'directory') {
+                if (SKIP_DIRS.has(handle.name)) return;
+                const newFolderPath = `${currentParentPath}/${handle.name}`;
+                if (!fileStructure[newFolderPath]) createFolder(newFolderPath, true);
+                else fileStructure[newFolderPath].expanded = true;
+
+                for await (const entry of handle.values()) {
+                    await processHandle(entry, newFolderPath);
+                }
+            }
+        };
+
+        // --- LEGACY API: File and Directory Entries API ---
         const processEntry = (entry, currentPathInZip) => {
-            return new Promise((resolveEntry) => {
+            return new Promise((resolveEntry, rejectEntry) => {
                 if (entry.isFile) {
                     entry.file((file) => {
                         if (file.size > MAX_FILE_SIZE_BYTES) {
@@ -305,15 +300,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                             filesProcessed++; resolveEntry();
                         };
                         reader.onerror = () => { filesProcessed++; resolveEntry(); };
-                        
                         const readMode = getFileReadMode(file.name);
                         if (readMode === 'dataurl') reader.readAsDataURL(file);
                         else if (readMode === 'text') reader.readAsText(file);
-                        else { 
-                            createFile(`${baseDropPath}/${currentPathInZip}`, `[Binary file: ${file.name}]`, false); 
-                            filesProcessed++; resolveEntry(); 
-                        }
-                    }, () => { filesProcessed++; resolveEntry(); });
+                        else { createFile(`${baseDropPath}/${currentPathInZip}`, `[Binary file: ${file.name}]`, false); filesProcessed++; resolveEntry(); }
+                    }, (err) => { 
+                        rejectEntry(err); // Trigger catch block for Chrome EncodingError
+                    });
                 } else if (entry.isDirectory) {
                     if (SKIP_DIRS.has(entry.name)) { filesProcessed++; resolveEntry(); return; }
                     const dirPathInStructure = `${baseDropPath}/${currentPathInZip}`;
@@ -322,74 +315,136 @@ document.addEventListener('DOMContentLoaded', async () => {
                     
                     const dirReader = entry.createReader(); 
                     const allEntries = [];
-                    const readEntriesRecursive = () => new Promise((res) => {
+                    const readEntriesRecursive = () => new Promise((res, rej) => {
                         dirReader.readEntries(chunks => {
                             if (chunks.length) {
                                 allEntries.push(...chunks);
-                                readEntriesRecursive().then(res);
+                                readEntriesRecursive().then(res).catch(rej);
                             } else {
                                 res();
                             }
-                        }, () => res());
+                        }, (err) => rej(err)); // Catch Chrome EncodingError here
                     });
                     
                     readEntriesRecursive().then(async () => {
                         for (const subEntry of allEntries) {
-                            await processEntry(subEntry, `${currentPathInZip}/${subEntry.name}`);
+                            try {
+                                await processEntry(subEntry, `${currentPathInZip}/${subEntry.name}`);
+                            } catch (err) {
+                                rejectEntry(err); return;
+                            }
                         }
                         filesProcessed++; resolveEntry();
-                    });
+                    }).catch(err => rejectEntry(err));
                 } else { 
                     filesProcessed++; resolveEntry(); 
                 }
             });
         };
 
-        // Extract entries synchronously to avoid DataTransferItemList detachment issues
-        const entries = [];
-        for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            if (item.kind === 'file') {
-                const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
-                if (entry) {
-                    entries.push(entry);
-                } else {
-                    // Fallback for environments lacking webkitGetAsEntry
-                    const file = item.getAsFile();
-                    if (file) {
-                        processQueue.push(new Promise((resolve) => {
-                            if (file.size > MAX_FILE_SIZE_BYTES) {
-                                createFile(`${baseDropPath}/${file.name}`, `[File too large: ${file.name}]`, false);
-                                filesProcessed++; resolve(); return;
+        // --- DIRECT FILE API: Fallback for basic files ---
+        const processFileDirect = (file, pathPrefix) => {
+            return new Promise((resolve) => {
+                if (!file) { resolve(); return; }
+                if (file.size > MAX_FILE_SIZE_BYTES) {
+                    createFile(`${pathPrefix}/${file.name}`, `[File too large: ${file.name}]`, false);
+                    filesProcessed++; resolve(); return;
+                }
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const fullPath = `${pathPrefix}/${file.name}`;
+                    if (!fileStructure[fullPath] || fileStructure[fullPath].isUntitled) {
+                        createFile(fullPath, event.target.result, false);
+                    }
+                    filesProcessed++; resolve();
+                };
+                reader.onerror = () => { filesProcessed++; resolve(); };
+                const readMode = getFileReadMode(file.name);
+                if (readMode === 'dataurl') reader.readAsDataURL(file);
+                else if (readMode === 'text') reader.readAsText(file);
+                else { createFile(`${pathPrefix}/${file.name}`, `[Binary file: ${file.name}]`, false); filesProcessed++; resolve(); }
+            });
+        };
+
+        try {
+            let usedModernAPI = false;
+            
+            // 1. Attempt Modern File System Access API
+            if (items && items.length > 0 && 'getAsFileSystemHandle' in DataTransferItem.prototype) {
+                const processQueue = [];
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].kind === 'file') {
+                        try {
+                            const handle = await items[i].getAsFileSystemHandle();
+                            if (handle) {
+                                processQueue.push(processHandle(handle, baseDropPath));
+                                usedModernAPI = true;
                             }
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                                const fullPath = `${baseDropPath}/${file.name}`;
-                                if (!fileStructure[fullPath] || fileStructure[fullPath].isUntitled) {
-                                    createFile(fullPath, event.target.result, false);
-                                }
-                                filesProcessed++; resolve();
-                            };
-                            reader.onerror = () => { filesProcessed++; resolve(); };
-                            const readMode = getFileReadMode(file.name);
-                            if (readMode === 'dataurl') reader.readAsDataURL(file);
-                            else if (readMode === 'text') reader.readAsText(file);
-                            else { createFile(`${baseDropPath}/${file.name}`, `[Binary file: ${file.name}]`, false); filesProcessed++; resolve(); }
-                        }));
+                        } catch (err) {
+                            console.warn("FileSystemHandle failed, falling back...", err);
+                            usedModernAPI = false;
+                            break; // Abort modern API and try legacy
+                        }
                     }
                 }
+                if (usedModernAPI) {
+                    await Promise.allSettled(processQueue);
+                }
+            }
+
+            // 2. Fallback to Legacy APIs if Modern API is unsupported or threw
+            if (!usedModernAPI) {
+                const processQueue = [];
+                let usedLegacyEntry = false;
+
+                if (items && items.length > 0) {
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i].kind === 'file') {
+                            const entry = items[i].webkitGetAsEntry ? items[i].webkitGetAsEntry() : null;
+                            if (entry) {
+                                usedLegacyEntry = true;
+                                if (entry.isFile) {
+                                    // Bypass entry.file() for top-level files to prevent EncodingError on basic file drops
+                                    const file = items[i].getAsFile();
+                                    if (file) processQueue.push(processFileDirect(file, baseDropPath));
+                                } else if (entry.isDirectory) {
+                                    processQueue.push(processEntry(entry, entry.name));
+                                }
+                            } else {
+                                const file = items[i].getAsFile();
+                                if (file) processQueue.push(processFileDirect(file, baseDropPath));
+                            }
+                        }
+                    }
+                }
+                
+                if (!usedLegacyEntry && files && files.length > 0) {
+                    for (let i = 0; i < files.length; i++) {
+                        processQueue.push(processFileDirect(files[i], baseDropPath));
+                    }
+                }
+
+                // If any of these reject, it will hit the catch block below.
+                await Promise.all(processQueue); 
+            }
+
+            renderFileTree(); 
+            updateStatusBar(); 
+            if (settings.autoSaveSession) saveSession();
+            
+            if (filesProcessed > 0) {
+                showNotification(`Done — ${filesProcessed} item(s) dropped.`, false, 4000);
+            }
+
+        } catch (err) {
+            console.error("Drop processing failed:", err);
+            if (err.name === 'EncodingError' || (err.message && err.message.includes('URI'))) {
+                showNotification("Browser security restricted folder drop on file://. Please use the 'Open Directory' button instead.", true, 6000);
+                renderFileTree(); // Render whatever managed to load
+            } else {
+                showNotification("Error processing dropped items.", true);
             }
         }
-
-        for (const entry of entries) {
-            processQueue.push(processEntry(entry, entry.name));
-        }
-
-        await Promise.allSettled(processQueue);
-        renderFileTree(); 
-        updateStatusBar(); 
-        if (settings.autoSaveSession) saveSession();
-        showNotification(`Done — ${filesProcessed} item(s) dropped.`, false, 4000);
     });
     
     initCommandPalette();
