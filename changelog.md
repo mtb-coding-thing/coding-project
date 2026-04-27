@@ -12,7 +12,8 @@
 - Fixed `.htm` preview not rendering as HTML (type was accepted but fell through the render branch without output)
 - Fixed `.svg` and `.xhtml` files showing `❓` icon and falling back to plain-text mode instead of XML highlighting
 - Fixed status bar showing raw MIME strings (e.g. `text/x-scss`) for many modes — `modeNames` now covers all modes the editor can set
-- Fixed "Done — 0 item(s) dropped." 
+- Fixed "Done — 0 item(s) dropped."
+- Fixed opened files not being consistently highlighted in the file tree
 
 ## Improvements
 - Pinned tabs are now saved to session data
